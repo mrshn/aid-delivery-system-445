@@ -1,48 +1,91 @@
-from math import radians, sin, cos, sqrt
-import random
-import string
 import uuid
+import json
+from enum import Enum
+import time
+import hashlib
+import threading
+from typing import List, Tuple
+from inspect import getfullargspec
 
 
-class UserManager:
-    """
-    This class will manage all the users on the platform. 
-    It will have methods to create, delete, and get users. It will also have a list of all the users.
-    """
-    def __init__(self):
-        self.users = []
+# Decorator to check writeable fields
+# Throws exception
+def validate(fields:list[str]):
+    def _validate(func):
+        def wrapper(*args, **kwargs):
+            argspec = getfullargspec(func)
+            argument_index = argspec.args.index("values")
+            values = args[argument_index]
+            for k in values:
+                if k not in fields:
+                    raise Exception("Unwriteable field write is attempted")
+            return func(*args, **kwargs)
+        return wrapper #this is the fun_obj mentioned in the above content
+    return _validate
 
-    def create_user(self, username: str, password: str, contact: str) -> User:
-        user = User(username, password, contact)
-        self.users.append(user)
-        return user
+# Decorator to check authorization
+# Authorize the user "admin" to everything
+# user should be the first parameter
+# put it as outermost decorator
+# Throws permission exception
+def authorize(func):
+    # TODO: implement
+    def wrapper(self, user, *args, **kwargs):
+        if user.username=="admin" and user.logged_in:
+            return func(self, user, *args, **kwargs)
+        elif self.owner != user.username or not user.logged_in:
+            raise Exception("Unaouthorized access")
+        return func(self, user, *args, **kwargs)
+    return wrapper #this is the fun_obj mentioned in the above content
 
-    def delete_user(self, user: User):
-        self.users.remove(user)
-
-    def get_user(self, username: str) -> User:
-        for user in self.users:
-            if user.username == username:
-                return user
-        return None
-
+# Decorator to check if user is admin
+def admin(func):
+    # TODO: implement
+    def wrapper(self, user, *args, **kwargs):
+        if user.username=="admin" and user.logged_in:
+            return func(self, user, *args, **kwargs)
+        raise Exception("Unaouthorized admin access")
+    return wrapper #this is the fun_obj mentioned in the above content
 
 class User:
+    __global_id_counter = 0
+    __readable_fields = ["id", "username", "email", "fullname"]
+    __writeable_fields = ["username", "email", "fullname", "passwd"]
+    __all_users = {}
+    
     def __init__(self, username, email, fullname, passwd):
         self.username = username
         self.email = email
         self.fullname = fullname
-        self.passwd = passwd
+        self.passwd = hashlib.sha256(passwd.encode())
         self.logged_in = False
         self.session_token = None
+        self.id = User.__global_id_counter
+        User.__global_id_counter+=1
+        self.__all_users[self.id] = self
 
-    def read(self):
-        # TODO: implement read operation
-        pass
+    def get(self):
+        result = {}
+        for f in User.__readable_fields:
+            result[f] = getattr(self, f)
+        return json.dumps(result, indent=4)
+
+    # return json string representation
+    @authorize
+    @validate(fields=__writeable_fields)
+    def update(self, user, values: dict[str,any]):
+        for k,v in values.items():
+            if k in User.__writeable_fields:
+                setattr(self, k, v)
+
+    @authorize
+    def delete(self, user):
+        # delete from db
+        del self.__all_users[self.id]
 
     def auth(self, plainpass):
         # Check if the supplied password matches the user password
-        return plainpass == self.passwd
+        return hashlib.sha256(plainpass.encode()).hexdigest() == self.passwd.hexdigest()
 
     def generate_random_token(self):
         return str(uuid.uuid4())
@@ -76,25 +119,18 @@ class User:
             self.logged_in = False
             self.end_session()
 
+    def __str__(self):
+        print("anan55 : ", str(self.get()))
+        str(self.get())
 
+    # for managing users
+    @classmethod
+    def search_user(cls, username: str):
+        for id, user in cls.__all_users.items():
+            if user.username == username:
+                return user
+        return None
 
-
-class Item:
-    def __init__(self, name, synonyms):
-        self.name = name
-        self.synonyms = synonyms
-
-    def update(self, name=None, synonyms=None):
-        if name is not None:
-            self.name = name
-        if synonyms is not None:
-            self.synonyms = synonyms
-
-    def search(self, name):
-        return name in [self.name] + self.synonyms
-
-
-from enum import Enum
 class Urgency(Enum):
     URGENT = 1
     SOON = 2
@@ -102,60 +138,124 @@ class Urgency(Enum):
     WEEKS = 4
     OPTIONAL = 5
 
-class Location:
-    """
-    This class will represent a location on the map. It will have a longitude and latitude.
-    """
-    def __init__(self, longitude: float, latitude: float):
-        self.longitude = longitude
-        self.latitude = latitude
-
-import threading
-import time
-from typing import List, Tuple
+    def get(self):
+        return self.name
 
 class Item:
     """Class representing an item"""
-    all_items = {}
+    __all_items = {}
+    __global_id_counter = 0
+    __readable_fields = ["id", "name", "synonyms"]
+    __writeable_fields = ["name", "synonyms"]
     
-    def __init__(self, name: str, synonyms: List[str]) -> None:
+    def __init__(self, name: str, synonyms: List[str] = None) -> None:
         self.name = name
         self.synonyms = synonyms
-        Item.all_items[name] = self
+        self.id = Item.__global_id_counter
+        Item.__global_id_counter+=1
+
+        Item.__all_items[self.id] = self
+
+    # return json string representation
+    def get(self):
+        result = {}
+        for f in Item.__readable_fields:
+            result[f] = getattr(self, f)
+        return json.dumps(result, indent=4)
+
+    # return json string representation
+    @validate(fields=__writeable_fields)
+    def update(self, values: dict[str,any]):
+        for k,v in values.items():
+            if k in self.__writeable_fields:
+                setattr(self, k, v)
+        # update in db
+    
+    def delete(self):
+        # delete from db
+        del Item.__all_items[self.id]
         
-    @staticmethod
-    def search(self, name: str) -> Item:
+    @classmethod
+    def search(cls, name: str):
         """Searches for an item by name or synonym"""
-        for item in Item.all_items.values():
-            if name == item.name or name in item.synonyms:
-                return self
+        print("anan : ", cls.__all_items.items())
+        for _id, v in cls.__all_items.items():
+            if name == v.name or (v.synonyms and name in v.synonyms):
+                return cls.__all_items[_id]
         return False
 
 class Request:
     """Class representing a request for supplies"""
-    def __init__(self, owner: str, items: List[Tuple[str,int]], geoloc: Tuple[float,float], urgency: str, comments: str) -> None:
+    __global_id_counter = 0
+    __readable_fields = ["id", "owner", "items", "geoloc", "urgency", "status"]
+    __custom_fields = ["urgency"]
+    __writeable_fields = ["owner", "items", "geoloc", "urgency", "status"]
+    __all_requests = {}
+
+    def __init__(self, owner: str, items: List[Tuple[str,int]], geoloc: Tuple[float,float], urgency: str, comments: str=None) -> None:
         self.owner = owner
-        self.items = items
+        self._init_items(items) 
         self.geoloc = geoloc
         self.urgency = urgency
         self.comments = comments
         self.status = "OPEN" # initial status is OPEN
         
-        self.available_suppliers = {} # available suppliers and their supplies
-        self.selected_supplies = {} # selected supplies from different suppliers
-        self.reserved_supplies = {} # reserved supplies by suppliers
-        self.delivery_info = {} # delivery information
+        self._available_suppliers = {} # available suppliers and their supplies
+        self._reserved_supplies = {} # reserved supplies by suppliers
+        self._delivery_info = {} # delivery information
+        self._selected_supplies = {}
         
-        self.id_counter = 0 # counter for unique ids
+        self.id = Request.__global_id_counter # counter for unique ids
+        Request.__global_id_counter += 1
+
+        self.__all_requests[self.id] = self
+    
+    def _init_items(self, items):
+        self.items = {}
+        for item_name, count in items:
+            item = Item.search(item_name)
+            if not item:
+                item = Item(item, [item]) # create a new item with the same name and synonym
+            self.items[item.name] = (count)
+
+
+    # return json string representation
+    def get(self):
+        result = {}
+        for f in Request.__readable_fields:
+            if f in Request.__custom_fields:
+                result[f] = getattr(self, f).get()
+            else:
+                result[f] = getattr(self, f)
+        print("anan44 : ", result)
+
+        for f in result:
+            print(f"type of {f} is {type(result[f])}")
+
+        print("anan47 : ", type(result))
+        return json.dumps(result)
+
+    # return json string representation
+    @authorize
+    @validate(fields=__writeable_fields)
+    def update(self, user: User, values: dict[str,any]):
+        for k,v in values.items():
+            if k in Request.__writeable_fields:
+                setattr(self, k, v)
+        # update in db
+
+    @authorize
+    def delete(self, user: User):
+        # delete from db
+        del self.__all_requests[self.id]
         
-    def markavailable(self, user: str, items: List[Tuple[str,int]], expire: int, geoloc: Tuple[float,float], comments: str) -> int:
+    def markavailable(self, user: User, items: List[Tuple[str,int]], expire: int, geoloc: Tuple[float,float], comments: str) -> int:
         """Marks some of the requested items as available by a supplier"""
         available_items = {}
-        for item, count in items:
-            if Item.search(item):
-                available_items[item] = count
-            else:
-                Item(item, [item]) # create a new item with the same name and synonym
+        for item_name, count in self.items.items():
+            if not Item.search(item_name):
+                Item(item_name, [item_name]) # create a new item with the same name and synonym
+            available_items[item_name] = (count)
         
         # TODO:  Not sure if I need to remove the reserved items from self.items
         # self.items = [(item, count) for item, count in self.items if (item, count) not in items]
@@ -170,28 +270,26 @@ class Request:
                     available_items[name] = 0
         """
 
-        supply_id = self.id_counter
-        self.id_counter += 1 # So it is unique
+        supply_id = str(uuid.uuid4())
         
-        self.available_suppliers[supply_id] = (user, geoloc, comments, available_items)
-        self.reserved_supplies[supply_id] = available_items
+        self._available_suppliers[supply_id] = (user, geoloc, comments, available_items)
+        self._reserved_supplies[supply_id] = available_items
         
-        # set a timer to remove the reserved supplies after the expire time has elapsed 
-        # TODO: change this to callback
         def remove_reserved_supplies():
-            # Add the reserved items back to self.items
-            del self.reserved_supplies[supply_id]
-            del self.available_suppliers[supply_id]
+            del self._reserved_supplies[supply_id]
+            del self._available_suppliers[supply_id]
+
         timer = threading.Timer(expire*3600, remove_reserved_supplies)
         timer.start()
+
         return supply_id
 
     
-    def pick(self, item_id: int, items: List[Tuple[str,int]]) -> None:
+    def pick(self, supply_id: str, items: List[Tuple[str,int]]) -> None:
         """Selects supplies from a supplier and starts delivery"""
-        supplier, geoloc, comments, available_items = self.available_suppliers[item_id]
+        supplier, geoloc, comments, available_items = self._available_suppliers[supply_id]
         selected_items = {}
-        for item, count in items:
+        for item, count in self.items.items():
             if item in available_items and available_items[item] >= count:
                 selected_items[item] = count
                 available_items[item] -= count
@@ -200,92 +298,73 @@ class Request:
                 selected_items[item] = available_items[item]
                 available_items[item] = 0
         if selected_items:
-            self.selected_supplies[supplier] = selected_items
-            self.delivery_info[supplier] = (geoloc, comments)
-            if available_items:
-                self.reserved_supplies[item_id] = available_items
+            self._selected_supplies[supplier] = selected_items
+            self._delivery_info[supplier] = (geoloc, comments)
+            if available_items[item]:
+                self._reserved_supplies[supply_id] = available_items
             else:
-                del self.reserved_supplies[item_id]
+                del self._reserved_supplies[supply_id]
                 
-    def arrived(self, item_id: int) -> None:
+    def arrived(self, supply_id: int) -> None:
         """Marks the selected supplies as arrived"""
-        supplier = list(self.selected_supplies.keys())[item_id]
-        delivered_items = self.selected_supplies[supplier]
+        supplier = list(self._selected_supplies.keys())[supply_id]
+        delivered_items = self._selected_supplies[supplier]
         for item, count in delivered_items.items():
-            for i in range(len(self.items)):
-                if self.items[i][0] == item:
-                    self.items[i] = (item, self.items[i][1] - count)
-                    if self.items[i][1] == 0:
-                        self.items.pop(i)
-                    break
-        del self.selected_supplies[supplier]
-        del self.delivery_info[supplier]
-        if not self.items and not self.selected_supplies:
+            self.items[item] = self.items[item] - count
+            if self.items[item] == 0:
+                del self.items[item]
+        del self._selected_supplies[supplier]
+        del self._delivery_info[supplier]
+        if not self.items and not self._selected_supplies:
             self.status = "CLOSED"
 
-
-
-class CampaignManager:
-    """
-    This class will manage all the campaigns on the platform. 
-    It will have methods to create, delete, and get campaigns. 
-    It will also have a list of all the campaigns.
-    """
-    def __init__(self):
-        self.campaigns = []
-
-    def create_campaign(self, name: str, description: str) -> 'Campaign':
-        campaign = Campaign(name, description)
-        self.campaigns.append(campaign)
-        return campaign
-
-    def delete_campaign(self, campaign: 'Campaign'):
-        self.campaigns.remove(campaign)
-
-    def get_campaign(self, name: str) -> 'Campaign':
-        for campaign in self.campaigns:
-            if campaign.name == name:
-                return campaign
-        return None
-
 class Campaign:
+    __global_id_counter = 0
+    _campaigns = {}
+
     def __init__(self, name, description):
         self.name = name
         self.description = description
         self.requests = []
         self.watch_callbacks = []
-        self.next_request_id = 1
+
+        self.id = Campaign.__global_id_counter
+        Campaign.__global_id_counter+=1
+
+        self._campaigns[self.id] = (self)
+
+    def delete(self):
+        # delete from db
+        del self._campaigns[self.id]
         
-    def addrequest(self, request):
-        request_id = self.next_request_id
-        self.next_request_id += 1
-        request.set_id(request_id)
+    def addrequest(self, request: Request):
         self.requests.append(request)
         for callback in self.watch_callbacks:
             if callback.matches_query(request):
                 callback.notify(request)
-        return request_id
+        return request.id
     
-    def removerequest(self, request_id):
+    def removerequest(self, user, request_id):
         for request in self.requests:
-            if request.get_id() == request_id:
-                if request.is_deletable():
+            if request.id == request_id:
+                if not len(request._delivery_info):
                     self.requests.remove(request)
+                    request.delete(user)
                     return True
                 else:
                     return False
         return False
-    
-    def updaterequest(self, request_id, *args, **kwargs):
+
+    def updaterequest(self, user, request_id, *args, **kwargs):
         for request in self.requests:
-            if request.get_id() == request_id:
-                return request.update(*args, **kwargs)
+            if request.id == request_id:
+                return request.update(user, *args, **kwargs)
         return False
     
     def getrequest(self, request_id):
         for request in self.requests:
-            if request.get_id() == request_id:
-                return request.read()
+            if request.id == request_id:
+                return request.get()
         return None
     
     def query(self, item=None, loc=None, urgency=None):
@@ -297,11 +376,11 @@ class Campaign:
                 continue
             if urgency is not None and request.urgency < urgency:
                 continue
-            matching_requests.append(request.read())
+            matching_requests.append(request)
         return matching_requests
     
     def watch(self, callback, item=None, loc=None, urgency=None):
-        watch_id = uuid.uuid4().hex
+        watch_id = str(uuid.uuid4())
         self.watch_callbacks.append(WatchCallback(watch_id, callback, item, loc, urgency))
         return watch_id
     
@@ -311,6 +390,7 @@ class Campaign:
                 self.watch_callbacks.remove(callback)
                 return True
         return False
+
 
 class Notification:
     """
@@ -341,12 +421,7 @@ class WatchCallback:
         return True
     
     def notify(self, request):
-        self.callback(request.read())
-
-
-
-
-
+        self.callback(request.get())
 
 
 
