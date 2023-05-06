@@ -3,7 +3,7 @@ import threading
 import json
 import struct
 
-from main import Campaign
+from lib import Campaign
 
 class Agent(threading.Thread):
     def __init__(self, conn):
@@ -13,6 +13,7 @@ class Agent(threading.Thread):
         self.instance = None
         self.user = None
         self.requests = {
+            # add commands for instance editing such as additem
             "authenticate": self.handle_authenticate,
             "login": self.handle_authenticate,
             "new": self.handle_new_instance,
@@ -79,6 +80,8 @@ class Agent(threading.Thread):
     def handle_open_instance(self, instance_id):
         # open instance logic goes here
         self.instance = instance_id
+        # close if open instance
+        # activate condition in for instance in msg queue
         self.send_message(f"Instance {instance_id} opened.")
 
     def handle_close_instance(self):
