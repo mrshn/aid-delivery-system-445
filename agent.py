@@ -6,13 +6,13 @@ import struct
 from lib import Campaign, WatchQueue, CampaignsManager
 
 class Agent(threading.Thread):
-    def __init__(self, conn, campaign):
+    def __init__(self, conn):
         threading.Thread.__init__(self)
         self.conn = conn
         self.authenticated = False
-        self.instance = None
         self.user = None
-        self.campaign = campaign 
+
+        self.campaign_instance = None # This will be a Campaign instance
         self.requests = {
             "authenticate": self.handle_authenticate,
             "login": self.handle_login,
@@ -61,7 +61,7 @@ class Agent(threading.Thread):
             return None
 
     def handle_authenticate(self, user, password):
-        if self.campaign.authenticate(user, password):
+        if self.campaign_instance.authenticate(user, password):
             self.user = user
             self.authenticated = True
             self.send_message("Authentication successful.")
