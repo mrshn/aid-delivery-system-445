@@ -155,6 +155,7 @@ class UserManager:
         user = UserManager.search_user(username)
         if user:
             user.logout()
+            return True
         return None
 
     @staticmethod

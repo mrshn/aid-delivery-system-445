@@ -27,7 +27,9 @@ class Client:
         return response
     
     def call_logout(self ):
-        command = {"command": "logout"}
+        command = {"command": "logout",
+                    "args" : []
+                   }
         
         self.send_command(command)
         print("Client send_command in call_logout")
@@ -59,7 +61,46 @@ class Client:
         print("Client recieved in call_list" , response)
 
         return response
+    
+    def call_add_catalog_item(self,name,synonyms):
+
+        command = {
+            "command" : "addcatalogitem",
+            "args" : [name,synonyms]
+        }
+        self.send_command(command)
+        print("Client send_command in call_add_catalog_item")
+        response = self.receive_response()
+        print("Client recieved in call_add_catalog_item" , response)
+
+        return response
         
+    def call_update_catalog_item(self,old_name,name,synonyms):
+
+        command = {
+            "command" : "updatecatalogitem",
+            "args" : [old_name,name,synonyms]
+        }
+        self.send_command(command)
+        print("Client send_command in call_update_catalog_item")
+        response = self.receive_response()
+        print("Client recieved in call_update_catalog_item" , response)
+
+        return response
+    
+    def call_search_catalog_item(self,name):
+
+        command = {
+            "command" : "searchcatalogitem",
+            "args" : [name]
+        }
+        self.send_command(command)
+        print("Client send_command in call_search_catalog_item")
+        response = self.receive_response()
+        print("Client recieved in call_search_catalog_item" , response)
+
+        return response
+    
     def call_new_instance(self, name, description):
 
         command = {
