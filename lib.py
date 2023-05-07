@@ -68,7 +68,14 @@ class Request:
     __writeable_fields = ["owner", "items", "geoloc", "urgency", "status"]
     __all_requests = {}
 
-    def __init__(self, owner: str, items: List[Tuple[str,int]], geoloc: Tuple[float,float],  urgency: str, distance: float = 10, comments: str=None) -> None:
+    def __init__(self, 
+                 owner: int, 
+                 items: List[Tuple[str,int]], 
+                 geoloc: Tuple[float,float],  
+                 urgency: str, 
+                 distance: float = 10, 
+                 comments: str=None,
+                 supplyNotificationCB=None) -> None:
         self.owner = owner
         self._init_items(items) 
         self.geoloc = geoloc
@@ -86,6 +93,7 @@ class Request:
 
         self.__all_requests[self.id] = self
         self.distance = distance
+        self.supplyNotificationCB = supplyNotificationCB
     
     def _init_items(self, items):
         self.items = {}
@@ -157,10 +165,13 @@ class Request:
         timer = threading.Timer(expire*3600, remove_reserved_supplies)
         timer.start()
 
+        if (self.supplyNotificationCB):
+            self.supplyNotificationCB(f"New items added, items : {available_items}")
+
         return supply_id
 
     
-    def pick(self, supply_id: str, items: List[Tuple[str,int]]) -> None:
+    def pick(self, supply_id: str) -> None:
         """Selects supplies from a supplier and starts delivery"""
         supplier, geoloc, comments, available_items = self._available_suppliers[supply_id]
         selected_items = {}

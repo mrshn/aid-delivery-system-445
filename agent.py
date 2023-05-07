@@ -2,8 +2,9 @@ import socket
 import threading
 import json
 import struct
+from typing import Tuple, List
 
-from lib import Campaign, WatchQueue, CampaignsManager
+from lib import CampaignsManager, Request
 from usermanager import UserManager
 
 class Agent(threading.Thread):
@@ -13,7 +14,7 @@ class Agent(threading.Thread):
         self.authenticated = False
         self.user = None
 
-        self.campaign_instance = None # This will be a Campaign instance
+        self.instance = None # This will be a Campaign instance
         self.requests = {
             "login": self.handle_login,
             "register": self.handle_register,
@@ -22,7 +23,9 @@ class Agent(threading.Thread):
             "list": self.handle_list_instances,
             "open": self.handle_open_instance,
             "close": self.handle_close_instance,
-            "additem": self.handle_add_item,
+            "addrequest": self.handle_add_item,
+            "updaterequest": self.handle_update_request,
+            "deleterequest": self.handle_delete_request,
             "watch": self.handle_watch
         }
 
@@ -131,9 +134,27 @@ class Agent(threading.Thread):
         self._watches = []
         self.send_message("Instance closed.")
 
-    def handle_add_item(self, obj_id, item_name, quantity, price):
-        self.campaign.find(obj_id).addrequest(item_name, quantity, price)
-        self.send_message(f"Item {item_name} added to object {obj_id}.")
+    def handle_add_request(self, items: List[Tuple[str,int]], geoloc: Tuple[float,float],  urgency: str):
+        def supplyNotificationCallback(message):
+            self.send_message(f"New request with id {r.id} update : ", message)
+        r = Request(self.user.id, items, geoloc, urgency, notificationCallBack=supplyNotificationCallback)
+        self.instance.addrequest(r)
+        self.send_message(f"New request with id {r.id} added to campaign with id {self.instance.id}. \n Request info : \n {r.get()}")
+        return r.id
+
+    def handle_update_request(self, request_id, *args, **kwargs):
+        if (self.instance.updaterequest(request_id, *args, **kwargs)):
+            self.send_message(f"Request with id {request_id} is updated. \n Request info : \n {self.instance.getrequest(request_id).get()}")
+            return request_id
+        else :
+            self.send_message(f"Request with id {request_id} update rejected. Request has active delivery.")
+
+    def handle_delete_request(self, request_id, *args, **kwargs):
+        if (self.instance.removerequest(request_id)):
+            self.send_message(f"Request with id {request_id} is deleted")
+            return request_id
+        else :
+            self.send_message(f"Request with id {request_id} delete rejected. Request has active delivery.")
 
     def send_message(self, message):
         self.conn.sendall(message.encode() + b"\n")
