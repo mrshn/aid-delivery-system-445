@@ -75,14 +75,15 @@ client1.send_command({
 
 # add request
 client1.send_command({
-    "command" : "open",
+    "command" : "addrequest",
     "args": [1]
 })
 
 # add another another
 client1.send_command({
-    "command" : "open",
-    "args": [1]
+    "command" : "addrequest",
+    # items, geoloc, urgency
+    "args": [[], (0,0), "URGENT"]
 })
 
 
