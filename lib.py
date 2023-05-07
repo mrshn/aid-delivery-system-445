@@ -241,7 +241,10 @@ class Campaign:
     def updaterequest(self, user, request_id, *args, **kwargs):
         for request in self.requests:
             if request.id == request_id:
-                return request.update(user, *args, **kwargs)
+                if not len(request._delivery_info):
+                    return request.update(user, *args, **kwargs)
+                else:
+                    return False
         return False
     
     def getrequest(self, request_id):
