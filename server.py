@@ -1,5 +1,4 @@
 import socket
-import argparse
 import threading
 import json
 import struct

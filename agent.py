@@ -6,16 +6,16 @@ import struct
 from lib import Campaign, WatchQueue, CampaignsManager
 
 class Agent(threading.Thread):
-    def __init__(self, conn):
+    def __init__(self, conn, campaign):
         threading.Thread.__init__(self)
         self.conn = conn
         self.authenticated = False
         self.instance = None
         self.user = None
+        self.campaign = campaign 
         self.requests = {
-            # add commands for instance editing such as additem
             "authenticate": self.handle_authenticate,
-            "login": self.handle_authenticate,
+            "login": self.handle_login,
             "new": self.handle_new_instance,
             "list": self.handle_list_instances,
             "open": self.handle_open_instance,
@@ -60,44 +60,49 @@ class Agent(threading.Thread):
         except:
             return None
 
-
     def handle_authenticate(self, user, password):
-        # do authentication logic here, for example check user credentials
-        # against a database or a file
-        self.user = user
-        self.authenticated = True
-        self.send_message("Authentication successful.")
+        if self.campaign.authenticate(user, password):
+            self.user = user
+            self.authenticated = True
+            self.send_message("Authentication successful.")
+        else:
+            self.user = None
+            self.authenticated = False
+            self.send_message("Authentication was not successful.")
+
+    def handle_login(self, user, password):
+        return self.authenticate(user, password)
 
     def handle_new_instance(self, *args):
-        # create new instance logic goes here
-        self.instance = None  # set instance to None for now
-        self.send_message("Instance created successfully.")
+        if not self.authenticated:
+            return "Authentication required."
+        self.instance = None 
+        instance_name = args[0] if len(args) > 0 else None
+        self.instance = self.campaign.new(*args)
+        self.send_message(f"New instance created with id '{self.current_instance.id}' and name '{instance_name or ''}'.")
 
     def handle_list_instances(self):
-        # list instances logic goes here
-        self.send_message("List of instances goes here.")
+        self.send_message("\n".join([f"{i.id}: {i.name or ''}" for i in self.campaign.instances]))
 
     def handle_open_instance(self, instance_id):
-        self.instance = CampaignsManager().getCampaign(instance_id)
-        if (not self.instance):
-            # return error message sayin campaign not exists
-            self.send_message(f"Instance {instance_id} does not exist.")
-        else:
-            # close open instance
-            # self.instance.unwatch
+        if not self.authenticated:
+            self.send_message("Authentication required.")
 
-            self.instance.watch(self.instance.id)
-            # activate condition in for instance in msg queue
-            self.send_message(f"Instance {instance_id} opened.")
+        instance = self.campaign.getrequest(instance_id)
+        if not instance:
+            self.send_message(f"Instance with id '{instance_id}' not found.")
+        else:
+            self.instance = instance
+            self.send_message(f"Instance with id '{instance_id}' opened.")
+
 
     def handle_close_instance(self):
-        # close instance logic goes here
         self.instance = None
 
         self.send_message("Instance closed.")
 
     def handle_add_item(self, obj_id, item_name, quantity, price):
-        # add item logic goes here
+        self.campaign.find(obj_id).addrequest(item_name, quantity, price)
         self.send_message(f"Item {item_name} added to object {obj_id}.")
 
 
