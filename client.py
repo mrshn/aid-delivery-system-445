@@ -63,11 +63,11 @@ class Client:
 
         return response
     
-    def call_update_request(self, items: List[Tuple[str,int]], geoloc: Tuple[float,float],  urgency: str):
+    def call_update_request(self, reqId,items: List[Tuple[str,int]], geoloc: Tuple[float,float],  urgency: str):
 
         command = {
             "command" : "updaterequest",
-            "args": [items,geoloc,urgency]
+            "args": [reqId,items,geoloc,urgency]
         }
         self.send_command(command)
         print("Client send_command in call_update_request")
@@ -170,7 +170,7 @@ class Client:
     
     def call_close(self):
         command = {
-            "command" : "open",
+            "command" : "close",
             "args": []
         }
         self.send_command(command)
