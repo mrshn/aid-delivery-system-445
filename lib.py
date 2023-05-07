@@ -311,6 +311,10 @@ class CampaignsManager():
             for c in CampaignsManager._campaigns:
                 if c.id == campaign_id:
                     return c
+                
+    @staticmethod
+    def listCampaigns():
+        return CampaignsManager._campaigns
 
 class Notification:
     """
