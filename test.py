@@ -1,4 +1,4 @@
-from main import *
+from lib import *
 import json
 
 User("tekmen0", "tekmen0@gmail.com", "tekmen tekmen", "secret")
