@@ -1,6 +1,5 @@
 import socket
 import json
-import struct
 
 class Client:
     
@@ -34,12 +33,15 @@ class Client:
         if not self.authenticated and command.get("command") not in ["authenticate", "login"]:
             return {"success": False, "error": "Not authenticated"}
         message = json.dumps(command).encode()
-        self.socket.send(struct.pack("I", len(message)))
         self.socket.send(message)
 
     def receive_response(self):
-        response_length = struct.unpack("I", self.socket.recv(4))[0]
-        response = json.loads(self.socket.recv(response_length).decode())
-        return response
+        response = []
+        req = self.socket.recv(1024)
+        while req and req != '':
+            # remove trailing newline and blanks
+            response.append(json.loads(req.decode()))
+        result = "".join(response)
+        return result
 
 

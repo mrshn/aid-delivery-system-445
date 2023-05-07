@@ -1,7 +1,6 @@
 import socket
 import threading
 import json
-import struct
 from typing import Tuple, List
 
 from lib import CampaignsManager, Request
@@ -23,7 +22,7 @@ class Agent(threading.Thread):
             "list": self.handle_list_instances,
             "open": self.handle_open_instance,
             "close": self.handle_close_instance,
-            "addrequest": self.handle_add_item,
+            "addrequest": self.handle_add_request,
             "updaterequest": self.handle_update_request,
             "deleterequest": self.handle_delete_request,
             "watch": self.handle_watch
@@ -36,6 +35,7 @@ class Agent(threading.Thread):
             try:
                 print("Agent is running ")
                 data = self.read_message()
+                print("Data : ", data)
                 if not data:
                     break
                 cmd = data[0]
@@ -60,14 +60,14 @@ class Agent(threading.Thread):
 
     def read_message(self):
         try:
-            size = struct.unpack("!I", self.conn.recv(4))[0]
-            data = bytearray()
-            while len(data) < size:
-                packet = self.conn.recv(size - len(data))
-                if not packet:
-                    return None
-                data.extend(packet)
-            return json.loads(data)
+            response = []
+            req = self.conn.recv(1024)
+            while req and req != '':
+                # remove trailing newline and blanks
+                response.append(json.loads(req.decode()))
+            result = "".join(response)
+            print(f"Result : {result}")
+            return result
         except:
             return None
         
@@ -100,24 +100,28 @@ class Agent(threading.Thread):
             return "Authentication required."
         self.instance = None 
         instance_name = args[0] if len(args) > 0 else None
-        self.instance = self.campaign.new(*args)
+        self.instance = CampaignsManager.addCampaign(*args)
         self.send_message(f"New instance created with id '{self.current_instance.id}' and name '{instance_name or ''}'.")
 
     def handle_list_instances(self):
-        self.send_message("\n".join([f"{i.id}: {i.name or ''}" for i in self.campaign.instances]))
+        self.send_message("\n".join([f"{i.id}: {i.name or ''}" for i in CampaignsManager.listCampaigns()]))
 
     def handle_open_instance(self, instance_id):
         if not self.authenticated:
             self.send_message("Authentication required.")
-
-        instance = self.campaign.getrequest(instance_id)
-        if not instance:
-            self.send_message(f"Instance with id '{instance_id}' not found.")
+        if self.instance:
+            self.handle_close_instance()
         else:
-            self.instance = CampaignsManager.getCampaign(instance_id)
-            self.send_message(f"Instance with id '{instance_id}' opened.")
+            instance = self.campaign.getrequest(instance_id)
+            if not instance:
+                self.send_message(f"Instance with id '{instance_id}' not found.")
+            else:
+                self.instance = CampaignsManager.getCampaign(instance_id)
+                self.send_message(f"Instance with id '{instance_id}' opened.")
     
     def handle_watch(self, item, loc, urgency):
+        if not self.authenticated:
+            self.send_message("Authentication required.")
         if not self.instance:
             self.send_message(f"First open an instance.")
         else :
@@ -128,13 +132,19 @@ class Agent(threading.Thread):
             self.send_message(f"New watcher registered with id : {watch_id}")
 
     def handle_close_instance(self):
-        self.instance = None
-        for watch_id in self._watches:
-            self.instance.unwatch(watch_id)
-        self._watches = []
-        self.send_message("Instance closed.")
+        if not self.authenticated:
+            self.send_message("Authentication required.")
+        if self.isinstance:
+            instanceid = self.instance.id
+            self.instance = None
+            for watch_id in self._watches:
+                self.instance.unwatch(watch_id)
+            self._watches = []
+            self.send_message(f"Instance with id {instanceid} closed.")
 
     def handle_add_request(self, items: List[Tuple[str,int]], geoloc: Tuple[float,float],  urgency: str):
+        if not self.authenticated:
+            self.send_message("Authentication required.")
         def supplyNotificationCallback(message):
             self.send_message(f"New request with id {r.id} update : ", message)
         r = Request(self.user.id, items, geoloc, urgency, notificationCallBack=supplyNotificationCallback)
@@ -143,13 +153,17 @@ class Agent(threading.Thread):
         return r.id
 
     def handle_update_request(self, request_id, *args, **kwargs):
+        if not self.authenticated:
+            self.send_message("Authentication required.")
         if (self.instance.updaterequest(request_id, *args, **kwargs)):
             self.send_message(f"Request with id {request_id} is updated. \n Request info : \n {self.instance.getrequest(request_id).get()}")
             return request_id
         else :
             self.send_message(f"Request with id {request_id} update rejected. Request has active delivery.")
 
-    def handle_delete_request(self, request_id, *args, **kwargs):
+    def handle_delete_request(self, request_id):
+        if not self.authenticated:
+            self.send_message("Authentication required.")
         if (self.instance.removerequest(request_id)):
             self.send_message(f"Request with id {request_id} is deleted")
             return request_id

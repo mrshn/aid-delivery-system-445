@@ -1,18 +1,98 @@
 from lib import *
 import json
+import sys
 
 from client import Client
 
+client1 = Client("localhost", 1423)
 
-client = Client("localhost", 1423)
+client1.register("emre", 1234)
 
 
-client.register("emre", 1234)
-client.login("emre", 1234)
+# command should fail since user not logged in 
+client1.send_command({
+    "command" : "new",
+    "args": ["hatay", "hatay peçete yardımı"]
+})
+
+client1.send_command({
+    "command" : "list",
+    "args": []
+})
+
+# login
+client1.login("emre", 1234)
+
+
+# create 3 new campaigns
+client1.send_command({
+    "command" : "new",
+    "args": ["maraş", "maraş peçete yardımı"]
+})
+
+client1.send_command({
+    "command" : "list",
+    "args": []
+})
+
+client1.send_command({
+    "command" : "new",
+    "args": ["aydın", "vinç yardımı"]
+})
+
+client1.send_command({
+    "command" : "new",
+    "args": ["antep", "yiyecek yardımı"]
+})
+
+client1.send_command({
+    "command" : "list",
+    "args": []
+})
+
+# open not existing campaign
+client1.send_command({
+    "command" : "open",
+    "args": [10]
+})
+
+# open campaign
+client1.send_command({
+    "command" : "open",
+    "args": [0]
+})
+
+# open another
+client1.send_command({
+    "command" : "open",
+    "args": [1]
+})
+
+# add request
+client1.send_command({
+    "command" : "open",
+    "args": [1]
+})
+
+# add another another
+client1.send_command({
+    "command" : "open",
+    "args": [1]
+})
+
+
+
+
+#client2 = Client("localhost", 1423)
+
+#client2.register("supplier", 1234)
+#client2.login("supplier", 1234)
+
+
 
 
 # Below are old test codes
-
+sys.exit()
 
 User("tekmen0", "tekmen0@gmail.com", "tekmen tekmen", "secret")
 user = User.search_user("tekmen0")
