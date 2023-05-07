@@ -14,6 +14,8 @@ client1.call_new_instance("Maras2", " Maras description2")
 
 client1.call_list()
 
+client1.call_open(0)
+
 
 print("annan")
 sys.exit()

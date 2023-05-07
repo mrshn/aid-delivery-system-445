@@ -72,7 +72,19 @@ class Client:
         print("Client recieved in call_new_instance" , response)
 
         return response
+    
+    def call_open(self, campaign_id):
 
+        command = {
+            "command" : "open",
+            "args": [campaign_id]
+        }
+        self.send_command(command)
+        print("Client send_command in call_open")
+        response = self.receive_response()
+        print("Client recieved in call_open" , response)
+
+        return response
 
     def send_command(self, json_command):
         json_command["token"] = self.token 

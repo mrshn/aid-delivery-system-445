@@ -109,7 +109,7 @@ class Agent(threading.Thread):
         instance_description = args[1] if len(args) > 1 else None
         if not instance_name  or not instance_description:
             return self.send_message("instance_name or instance_description can not be empty.",success=False)
-        self.instance = CampaignsManager.addCampaign(instance_name,instance_description)
+        CampaignsManager.addCampaign(instance_name,instance_description)
         self.send_message("New instance created ", data= f"id={self.instance.id}, name={instance_name}, description={instance_description}")
 
 
@@ -124,7 +124,7 @@ class Agent(threading.Thread):
         if self.instance:
             self.handle_close_instance()
 
-        instance = self.instance.getrequest(instance_id)
+        instance = CampaignsManager.getCampaign(instance_id)
         if not instance:
             return self.send_message(f"Instance with id '{instance_id}' not found.",success=False)
         else:
