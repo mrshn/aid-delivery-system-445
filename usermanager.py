@@ -136,13 +136,13 @@ class UserManager:
         UserManager.__all_users[new_user.id] = new_user
 
     @staticmethod
-    def login( username, password):
+    def login( username, password ):
         user = UserManager.search_user(username)
         if user:
             if user.auth(username,password):
                 user.login()
         return None
-    
+
     @staticmethod
     def logout(username):
         user = UserManager.search_user(username)
@@ -151,7 +151,7 @@ class UserManager:
         return None
 
     @staticmethod
-    def remove_user( username):
+    def remove_user(username):
         user = UserManager.search_user(username)
         if user and user.logged_in:
             del UserManager.__all_users[user.id]
