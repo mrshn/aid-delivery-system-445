@@ -5,6 +5,7 @@ import threading
 from typing import List, Tuple
 from multiprocessing import RLock
 from usermanager import *
+import math
 
 
 class Urgency(Enum):
@@ -67,7 +68,7 @@ class Request:
     __writeable_fields = ["owner", "items", "geoloc", "urgency", "status"]
     __all_requests = {}
 
-    def __init__(self, owner: str, items: List[Tuple[str,int]], geoloc: Tuple[float,float], urgency: str, comments: str=None) -> None:
+    def __init__(self, owner: str, items: List[Tuple[str,int]], geoloc: Tuple[float,float],  urgency: str, distance: float = 10, comments: str=None) -> None:
         self.owner = owner
         self._init_items(items) 
         self.geoloc = geoloc
@@ -84,6 +85,7 @@ class Request:
         Request.__global_id_counter += 1
 
         self.__all_requests[self.id] = self
+        self.distance = distance
     
     def _init_items(self, items):
         self.items = {}
@@ -190,6 +192,10 @@ class Request:
         del self._delivery_info[supplier]
         if not self.items and not self._selected_supplies:
             self.status = "CLOSED"
+
+    def location_within(self, loc):
+        return math.sqrt((self.geoloc[0] - loc[0])^2 + (self.geoloc[1] - loc[1])^2) < self.distance
+
 
 class Campaign:
     __global_id_counter = 0
