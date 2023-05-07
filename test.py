@@ -1,6 +1,19 @@
 from lib import *
 import json
 
+from client import Client
+
+
+client = Client("localhost", 1423)
+
+
+client.register("emre", 1234)
+client.login("emre", 1234)
+
+
+# Below are old test codes
+
+
 User("tekmen0", "tekmen0@gmail.com", "tekmen tekmen", "secret")
 user = User.search_user("tekmen0")
 

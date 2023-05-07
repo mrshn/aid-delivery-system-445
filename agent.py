@@ -31,13 +31,16 @@ class Agent(threading.Thread):
     def run(self):
         while True:
             try:
+                print("Agent is running ")
                 data = self.read_message()
                 if not data:
                     break
                 cmd = data[0]
                 args = data[1:]
+                print(f"Agent recieved {cmd} and {args}")
+
                 if cmd in self.requests:
-                    if cmd in ["authenticate", "login", "new", "list"]:
+                    if cmd in ["login", "register", "new", "list"]:
                         self.requests[cmd](*args)
                     else:
                         if self.authenticated and self.instance:
