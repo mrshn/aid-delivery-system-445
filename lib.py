@@ -406,7 +406,7 @@ class CampaignsManager():
         with campaign_manager_mutex:
             CampaignsManager._campaigns.append(campaign)
         return campaign
-    
+    @staticmethod
     def getCampaign(campaign_id):
 
         global campaign_manager_mutex
