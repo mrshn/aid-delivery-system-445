@@ -3,7 +3,7 @@ import threading
 import json
 from typing import Tuple, List
 
-from lib import CampaignsManager, Request
+from lib import CampaignsManager, Request, Item
 from usermanager import UserManager
 
 class Agent(threading.Thread):
@@ -22,6 +22,9 @@ class Agent(threading.Thread):
             "list": self.handle_list_instances,
             "open": self.handle_open_instance,
             "close": self.handle_close_instance,
+            "addcatalogitem": self.handle_add_catalog_item,
+            "updatecatalogitem": self.handle_update_catalog_item,
+            "searchcatalogitem": self.handle_search_catalog_item,
             "addrequest": self.handle_add_request,
             "updaterequest": self.handle_update_request,
             "deleterequest": self.handle_delete_request,
@@ -173,6 +176,28 @@ class Agent(threading.Thread):
             return request_id
         else :
             self.send_message(f"Request with id {request_id} delete rejected. Request has active delivery.")
+
+    def handle_add_catalog_item(self, name, synonyms):
+        if not self.authenticated:
+            self.send_message("Authentication required.")
+        else:
+            Item(name, synonyms)
+            self.send_message(f"Catalog item '{name}' is created")
+    
+    def handle_update_catalog_item(self, old_name, new_name, synonyms):
+        if not self.authenticated:
+            self.send_message("Authentication required.")
+        else:
+            item = Item.search(old_name)
+            item.update(new_name, synonyms)
+            self.send_message(f"Catalog item is updated")
+
+    def handle_search_catalog_item(self, name):
+        if not self.authenticated:
+            self.send_message("Authentication required.")
+        else:
+            item = Item.search(name)
+            self.send_message(f"Item id : {item.id} \n Item name : {item.name} \n Item synonyms : {item.synonyms}")
 
     def send_message(self, message, data = "No data"):
         response = {"response": message,
