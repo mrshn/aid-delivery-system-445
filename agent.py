@@ -98,9 +98,6 @@ class Agent(threading.Thread):
         else:
             return self.send_message("Logout was not successful.",success=False)
 
-    def handle_add_item(self, user, password):
-        return
-
     def handle_new_instance(self, *args):
         # *args are  [name, description]
         if not self.authenticated:
@@ -115,20 +112,20 @@ class Agent(threading.Thread):
 
 
     def handle_list_instances(self):
-        self.send_message("\n".join([f"{i.id}: {i.name or ''}" for i in CampaignsManager.listCampaigns()]))
+        return self.send_message("\n".join([f"{i.id}: {i.name or ''}" for i in CampaignsManager.listCampaigns()]))
 
     def handle_open_instance(self, instance_id):
         if not self.authenticated:
-            self.send_message("Authentication required.")
+            return self.send_message("Authentication required.",success=False)
         if self.instance:
             self.handle_close_instance()
+
+        instance = self.instance.getrequest(instance_id)
+        if not instance:
+            return self.send_message(f"Instance with id '{instance_id}' not found.",success=False)
         else:
-            instance = self.campaign.getrequest(instance_id)
-            if not instance:
-                self.send_message(f"Instance with id '{instance_id}' not found.")
-            else:
-                self.instance = CampaignsManager.getCampaign(instance_id)
-                self.send_message(f"Instance with id '{instance_id}' opened.")
+            self.instance = CampaignsManager.getCampaign(instance_id)
+            return self.send_message(f"Instance with id '{instance_id}' opened.")
     
     def handle_watch(self, item, loc, urgency):
         if not self.authenticated:
@@ -144,14 +141,14 @@ class Agent(threading.Thread):
 
     def handle_close_instance(self):
         if not self.authenticated:
-            self.send_message("Authentication required.")
-        if self.isinstance:
+            return self.send_message("Authentication required.",success=False)
+        if self.instance:
             instanceid = self.instance.id
             self.instance = None
             for watch_id in self._watches:
                 self.instance.unwatch(watch_id)
             self._watches = []
-            self.send_message(f"Instance with id {instanceid} closed.")
+            return self.send_message(f"Instance with id {instanceid} closed.")
 
     def handle_add_request(self, items: List[Tuple[str,int]], geoloc: Tuple[float,float],  urgency: str):
         if not self.authenticated:
