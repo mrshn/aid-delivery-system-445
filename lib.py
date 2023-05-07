@@ -69,14 +69,13 @@ class Request:
     __all_requests = {}
 
     def __init__(self, 
-                 owner: int, 
                  items: List[Tuple[str,int]], 
                  geoloc: Tuple[float,float],  
                  urgency: str, 
                  distance: float = 10, 
                  comments: str=None,
                  supplyNotificationCB=None) -> None:
-        self.owner = owner
+        self.owner = 1
         self._init_items(items) 
         self.geoloc = geoloc
         self.urgency = Urgency(urgency)
@@ -238,12 +237,12 @@ class Campaign:
                 callback.notify(self.id, request)
         return request.id
     
-    def removerequest(self, user, request_id):
+    def removerequest(self,  request_id):
         for request in self.requests:
             if request.id == request_id:
                 if not len(request._delivery_info):
                     self.requests.remove(request)
-                    request.delete(user)
+                    # request.delete(user)
                     return True
                 else:
                     return False
@@ -253,7 +252,8 @@ class Campaign:
         for request in self.requests:
             if request.id == request_id:
                 if not len(request._delivery_info):
-                    return request.update(user, *args, **kwargs)
+                    request.update(user, *args, **kwargs)
+                    return True
                 else:
                     return False
         return False

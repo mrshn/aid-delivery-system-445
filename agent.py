@@ -155,32 +155,23 @@ class Agent(threading.Thread):
             return self.send_message(f"Instance with id {instanceid} closed.")
 
     def handle_add_request(self, items: List[Tuple[str,int]], geoloc: Tuple[float,float],  urgency: str):
-        if not self.authenticated:
-            self.send_message("Authentication required.")
         def supplyNotificationCallback(message):
             self.send_message(f"New request with id {r.id} update : ", message)
-        r = Request(self.user.id, items, geoloc, urgency, notificationCallBack=supplyNotificationCallback)
+        r = Request( items, geoloc, urgency, supplyNotificationCB=supplyNotificationCallback)
         self.instance.addrequest(r)
-        self.send_message(f"New request with id {r.id} added to campaign with id {self.instance.id}. \n Request info : \n {r.get()}")
-        return r.id
+        return self.send_message(f"New request with id {r.id} added to campaign with id {self.instance.id}. \n Request info : \n {r.get()}")
 
     def handle_update_request(self, request_id, *args, **kwargs):
-        if not self.authenticated:
-            self.send_message("Authentication required.")
         if (self.instance.updaterequest(request_id, *args, **kwargs)):
-            self.send_message(f"Request with id {request_id} is updated. \n Request info : \n {self.instance.getrequest(request_id).get()}")
-            return request_id
+            return self.send_message(f"Request with id {request_id} is updated. \n Request info : \n {self.instance.getrequest(request_id).get()}")
         else :
             self.send_message(f"Request with id {request_id} update rejected. Request has active delivery.")
 
     def handle_delete_request(self, request_id):
-        if not self.authenticated:
-            self.send_message("Authentication required.")
         if (self.instance.removerequest(request_id)):
-            self.send_message(f"Request with id {request_id} is deleted")
-            return request_id
+            return self.send_message(f"Request with id {request_id} is deleted")
         else :
-            self.send_message(f"Request with id {request_id} delete rejected. Request has active delivery.")
+            return self.send_message(f"Request with id {request_id} delete rejected. Request has active delivery.")
 
     def handle_add_catalog_item(self, name, synonyms):
         Item(name, synonyms)

@@ -1,5 +1,6 @@
 import socket
 import json
+from typing import Tuple, List
 
 class Client:
     
@@ -48,6 +49,46 @@ class Client:
         print("Client recieved in call_register" , response)
 
         return response
+    
+    def call_add_request(self, items: List[Tuple[str,int]], geoloc: Tuple[float,float],  urgency: str):
+
+        command = {
+            "command" : "addrequest",
+            "args": [items,geoloc,urgency]
+        }
+        self.send_command(command)
+        print("Client send_command in call_add_request")
+        response = self.receive_response()
+        print("Client recieved in call_add_request" , response)
+
+        return response
+    
+    def call_update_request(self, reqId,items: List[Tuple[str,int]], geoloc: Tuple[float,float],  urgency: str):
+
+        command = {
+            "command" : "updaterequest",
+            "args": [reqId,items,geoloc,urgency]
+        }
+        self.send_command(command)
+        print("Client send_command in call_update_request")
+        response = self.receive_response()
+        print("Client recieved in call_update_request" , response)
+
+        return response
+    
+    def handle_delete_request(self, request_id):
+
+        command = {
+            "command" : "deleterequest",
+            "args": [request_id]
+        }
+        self.send_command(command)
+        print("Client send_command in handle_delete_request")
+        response = self.receive_response()
+        print("Client recieved in handle_delete_request" , response)
+
+        return response
+
 
     def call_list(self):
 
@@ -129,7 +170,7 @@ class Client:
     
     def call_close(self):
         command = {
-            "command" : "open",
+            "command" : "close",
             "args": []
         }
         self.send_command(command)
