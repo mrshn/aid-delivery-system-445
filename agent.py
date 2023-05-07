@@ -1,7 +1,6 @@
 import socket
 import threading
 import json
-import struct
 from typing import Tuple, List
 
 from lib import CampaignsManager, Request
@@ -36,10 +35,12 @@ class Agent(threading.Thread):
             try:
                 print("Agent is running ")
                 data = self.read_message()
+                print("data is read at Agent" , data)
                 if not data:
                     break
-                cmd = data[0]
-                args = data[1:]
+                cmd = data["command"]
+                args = data["args"]
+                
                 print(f"Agent recieved {cmd} and {args}")
 
                 if cmd in self.requests:
@@ -59,18 +60,16 @@ class Agent(threading.Thread):
         self.conn.close()
 
     def read_message(self):
-        try:
-            size = struct.unpack("!I", self.conn.recv(4))[0]
-            data = bytearray()
-            while len(data) < size:
-                packet = self.conn.recv(size - len(data))
-                if not packet:
-                    return None
-                data.extend(packet)
-            return json.loads(data)
-        except:
-            return None
-        
+        data = b""
+        while True:
+            chunk = self.conn.recv(1024)
+            data += chunk
+            try:
+                msg = json.loads(data.decode())
+                return msg
+            except ValueError:
+                continue
+
     def handle_register(self, user, password):
         if UserManager.add_user(user, password):
             self.send_message("Register is successful. Please login ")
@@ -78,10 +77,11 @@ class Agent(threading.Thread):
             self.send_message("User already exists.")
 
     def handle_login(self, user, password):
-        if UserManager.login(user, password):
+        token =  UserManager.login(user, password)
+        if token:
             self.user = user
             self.authenticated = True
-            self.send_message("Authentication successful.")
+            self.send_message("Authentication was not successful.",token)
         else:
             self.user = None
             self.authenticated = False
@@ -94,6 +94,10 @@ class Agent(threading.Thread):
             self.send_message("Logout successful.")
         else:
             self.send_message("Logout was not successful.")
+
+    def handle_add_item(self, user, password):
+        return
+
 
     def handle_new_instance(self, *args):
         if not self.authenticated:
@@ -156,7 +160,10 @@ class Agent(threading.Thread):
         else :
             self.send_message(f"Request with id {request_id} delete rejected. Request has active delivery.")
 
-    def send_message(self, message):
-        self.conn.sendall(message.encode() + b"\n")
+    def send_message(self, message, data = "No data"):
+        response = {"response": message,
+                    "data": data}
+        message = json.dumps(response).encode()
+        self.conn.sendall(message)
 
 

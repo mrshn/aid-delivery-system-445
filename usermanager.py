@@ -57,7 +57,7 @@ class User:
         self.username = username
         self.email = email
         self.fullname = fullname
-        self.passwd = hashlib.sha256(passwd.encode())
+        self.passwd = hashlib.sha256(f"{passwd}".encode())
         self.logged_in = False
         self.session_token = None
         self.id = User.__global_id_counter
@@ -78,7 +78,7 @@ class User:
 
     def auth(self, plainpass):
         # Check if the supplied password matches the user password
-        return hashlib.sha256(plainpass.encode()).hexdigest() == self.passwd.hexdigest()
+        return hashlib.sha256(f"{plainpass}".encode()).hexdigest() == self.passwd.hexdigest()
 
     def generate_random_token(self):
         return str(uuid.uuid4())
@@ -138,8 +138,8 @@ class UserManager:
     def login( username, password ):
         user = UserManager.search_user(username)
         if user:
-            if user.auth(username,password):
-                user.login()
+            if user.auth(password):
+                return user.login()
         return None
 
     @staticmethod

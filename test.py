@@ -12,7 +12,7 @@ client.login("emre", 1234)
 
 
 # Below are old test codes
-
+""""
 
 User("tekmen0", "tekmen0@gmail.com", "tekmen tekmen", "secret")
 user = User.search_user("tekmen0")
@@ -46,3 +46,5 @@ req.pick(supply_id, ["5", 13])
 
 
 user.logout()
+
+"""
