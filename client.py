@@ -10,18 +10,17 @@ class Client:
         self.socket.connect((self.host, self.port))
         self.authenticated = False
 
-    def login(self, username, password):
+    def call_login(self, username, password):
         command = {"command": "login",
                    "args": [username, password] }
         
         self.send_command(command)
         response = self.receive_response()
         print("Client recieved in login" , response)
-        if response.get("success"):
-            self.authenticated = True
+ 
         return response
     
-    def register(self, username, password):
+    def call_register(self, username, password):
         command = {"command": "register", 
                     "args" : [username,password] }
         
@@ -29,9 +28,22 @@ class Client:
         print("Client send_command in register")
         response = self.receive_response()
         print("Client recieved in register" , response)
-        if response.get("success"):
-            self.authenticated = True
+
         return response
+    
+    def call_new_instance(self, name, description):
+
+        command = {
+            "command" : "new",
+            "args": [name, description]
+        }
+        self.send_command(command)
+        print("Client send_command in call_new_instance")
+        response = self.receive_response()
+        print("Client recieved in call_new_instance" , response)
+
+        return response
+
 
     def send_command(self, json_command):
         message = json.dumps(json_command).encode()
@@ -44,6 +56,8 @@ class Client:
             data += chunk
             try:
                 msg = json.loads(data.decode())
+                if not msg["success"]:
+                    print("Your request failed to be executed")
                 return msg
             except ValueError:
                 continue

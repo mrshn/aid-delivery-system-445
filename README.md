@@ -1,4 +1,4 @@
-# Ceng 445 An Aid Delivery System
+# Ceng 445 Project An Aid Delivery System
 
 ## About
 During a disaster, people located in various locations of a wide area need various equipments
