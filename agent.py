@@ -48,16 +48,16 @@ class Agent(threading.Thread):
                 print(f"Agent recieved {cmd} and {args}")
 
                 if cmd in self.requests:
-                    if cmd in ["login", "register", "new", "list"]:
+                    if cmd in ["login", "register"]:
                         self.requests[cmd](*args)
                     else:
                         self.authenticated = UserManager.validate_token(self.username,token)
-                        if self.authenticated and self.instance:
+                        if self.authenticated :
                             self.requests[cmd](*args)
                         else:
-                            self.send_message("Please authenticate and open an instance first.")
+                            self.send_message("Please authenticate first",success=False)
                 else:
-                    self.send_message("Invalid command.")
+                    self.send_message("Invalid command.",success=False)
 
             except Exception as e:
                 print(f"Error handling request: {str(e)}")
@@ -109,8 +109,8 @@ class Agent(threading.Thread):
         instance_description = args[1] if len(args) > 1 else None
         if not instance_name  or not instance_description:
             return self.send_message("instance_name or instance_description can not be empty.",success=False)
-        self.instance = CampaignsManager.addCampaign(instance_name,instance_description)
-        self.send_message("New instance created ", data= f"id={self.instance.id}, name={instance_name}, description={instance_description}")
+        instance = CampaignsManager.addCampaign(instance_name,instance_description)
+        self.send_message("New instance created ", data= f"id={instance.id}, name={instance_name}, description={instance_description}")
 
 
     def handle_list_instances(self):
@@ -183,26 +183,23 @@ class Agent(threading.Thread):
             self.send_message(f"Request with id {request_id} delete rejected. Request has active delivery.")
 
     def handle_add_catalog_item(self, name, synonyms):
-        if not self.authenticated:
-            self.send_message("Authentication required.")
-        else:
-            Item(name, synonyms)
-            self.send_message(f"Catalog item '{name}' is created")
+        Item(name, synonyms)
+        self.send_message(f"Catalog item '{name}' is created")
     
     def handle_update_catalog_item(self, old_name, new_name, synonyms):
-        if not self.authenticated:
-            self.send_message("Authentication required.")
-        else:
-            item = Item.search(old_name)
-            item.update(new_name, synonyms)
-            self.send_message(f"Catalog item is updated")
+        
+        item = Item.search(old_name)
+        if item:
+            # item.update(new_name, synonyms)
+            return self.send_message(f"Catalog item is updated")
+        return self.send_message(f"Catalog item is not updated", success=False)
 
     def handle_search_catalog_item(self, name):
-        if not self.authenticated:
-            self.send_message("Authentication required.")
-        else:
-            item = Item.search(name)
-            self.send_message(f"Item id : {item.id} \n Item name : {item.name} \n Item synonyms : {item.synonyms}")
+
+        item = Item.search(name)
+        if item:
+            return self.send_message(f"Item id : {item.id} \n Item name : {item.name} \n Item synonyms : {item.synonyms}")
+        self.send_message("Item not found", success=False)
 
     def send_message(self, message, data = "No data", success = True):
         response = {"response": message,
