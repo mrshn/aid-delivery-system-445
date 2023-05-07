@@ -124,7 +124,7 @@ class Agent(threading.Thread):
         if self.instance:
             self.handle_close_instance()
 
-        instance = self.instance.getrequest(instance_id)
+        instance = CampaignsManager.getCampaign(instance_id)
         if not instance:
             return self.send_message(f"Instance with id '{instance_id}' not found.",success=False)
         else:
