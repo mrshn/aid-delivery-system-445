@@ -6,22 +6,27 @@ from client import Client
 
 client1 = Client("localhost", 1423)
 
-client1.register("emre", 1234)
+client1.call_register("emre", 1234)
 
+client1.call_login("emre", 1234)
 
 # command should fail since user not logged in 
-client1.send_command({
-    "command" : "new",
-    "args": ["hatay", "hatay peçete yardımı"]
-})
+
+client1.call_new_instance("Maras", " Maras description")
+
+
+print("annan")
+sys.exit()
+
 
 client1.send_command({
     "command" : "list",
     "args": []
 })
 
+
+
 # login
-client1.login("emre", 1234)
 
 
 # create 3 new campaigns
@@ -92,7 +97,6 @@ client1.send_command({
 
 
 # Below are old test codes
-sys.exit()
 
 User("tekmen0", "tekmen0@gmail.com", "tekmen tekmen", "secret")
 user = User.search_user("tekmen0")
@@ -126,5 +130,3 @@ req.pick(supply_id, ["5", 13])
 
 
 user.logout()
-
-"""

@@ -72,40 +72,44 @@ class Agent(threading.Thread):
 
     def handle_register(self, user, password):
         if UserManager.add_user(user, password):
-            self.send_message("Register is successful. Please login ")
+            return self.send_message("Register is successful. Please login ")
         else:
-            self.send_message("User already exists.")
+            return self.send_message("Register was not successful",success=False)
 
     def handle_login(self, user, password):
         token =  UserManager.login(user, password)
         if token:
             self.user = user
             self.authenticated = True
-            self.send_message("Authentication was not successful.",token)
+            return self.send_message("Authentication successful.",token)
         else:
             self.user = None
             self.authenticated = False
-            self.send_message("Authentication was not successful.")
+            return self.send_message("Authentication was not successful.",success=False)
 
     def handle_logout(self, user, password):
         if self.authenticated and UserManager.logout(user, password):
             self.user = None
             self.authenticated = False
-            self.send_message("Logout successful.")
+            return self.send_message("Logout successful.")
         else:
-            self.send_message("Logout was not successful.")
+            return self.send_message("Logout was not successful.",success=False)
 
     def handle_add_item(self, user, password):
         return
 
-
     def handle_new_instance(self, *args):
+        # *args are  [name, description]
         if not self.authenticated:
-            return "Authentication required."
+            return self.send_message("Authentication required.",success=False)
         self.instance = None 
         instance_name = args[0] if len(args) > 0 else None
-        self.instance = CampaignsManager.addCampaign(*args)
-        self.send_message(f"New instance created with id '{self.current_instance.id}' and name '{instance_name or ''}'.")
+        instance_description = args[1] if len(args) > 1 else None
+        if not instance_name  or not instance_description:
+            return self.send_message("instance_name or instance_description can not be empty.",success=False)
+        self.instance = CampaignsManager.addCampaign(instance_name,instance_description)
+        self.send_message("New instance created ", data= f"id={self.instance.id}, name={instance_name}, description={instance_description}")
+
 
     def handle_list_instances(self):
         self.send_message("\n".join([f"{i.id}: {i.name or ''}" for i in CampaignsManager.listCampaigns()]))
@@ -174,9 +178,10 @@ class Agent(threading.Thread):
         else :
             self.send_message(f"Request with id {request_id} delete rejected. Request has active delivery.")
 
-    def send_message(self, message, data = "No data"):
+    def send_message(self, message, data = "No data", success = True):
         response = {"response": message,
-                    "data": data}
+                    "data": data,
+                    "success": success}
         message = json.dumps(response).encode()
         self.conn.sendall(message)
 
