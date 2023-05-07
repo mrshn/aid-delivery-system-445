@@ -1,3 +1,6 @@
+import threading
+import queue
+
 class MessageQueue():
     active_campaigns = []
     def __init__(self) -> None:
