@@ -7,12 +7,12 @@ from client import Client
 client1 = Client("localhost", 1423)
 
 client1.call_register("emre", 1234)
-
 client1.call_login("emre", 1234)
 
-# command should fail since user not logged in 
-
 client1.call_new_instance("Maras", " Maras description")
+client1.call_new_instance("Maras2", " Maras description2")
+
+client1.call_list()
 
 
 print("annan")

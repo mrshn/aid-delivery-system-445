@@ -11,7 +11,7 @@ class Agent(threading.Thread):
         threading.Thread.__init__(self)
         self.conn = conn
         self.authenticated = False
-        self.user = None
+        self.username = None
 
         self.instance = None # This will be a Campaign instance
         self.requests = {
@@ -43,6 +43,7 @@ class Agent(threading.Thread):
                     break
                 cmd = data["command"]
                 args = data["args"]
+                token = data["token"]
                 
                 print(f"Agent recieved {cmd} and {args}")
 
@@ -50,6 +51,7 @@ class Agent(threading.Thread):
                     if cmd in ["login", "register", "new", "list"]:
                         self.requests[cmd](*args)
                     else:
+                        self.authenticated = UserManager.validate_token(self.username,token)
                         if self.authenticated and self.instance:
                             self.requests[cmd](*args)
                         else:
@@ -73,26 +75,26 @@ class Agent(threading.Thread):
             except ValueError:
                 continue
 
-    def handle_register(self, user, password):
-        if UserManager.add_user(user, password):
+    def handle_register(self, username, password):
+        if UserManager.add_user(username, password):
             return self.send_message("Register is successful. Please login ")
         else:
-            return self.send_message("Register was not successful",success=False)
+            return self.send_message("Register was not successful", success=False)
 
-    def handle_login(self, user, password):
-        token =  UserManager.login(user, password)
+    def handle_login(self, username, password):
+        token =  UserManager.login(username, password)
         if token:
-            self.user = user
+            self.username = username
             self.authenticated = True
             return self.send_message("Authentication successful.",token)
         else:
-            self.user = None
+            self.username = None
             self.authenticated = False
             return self.send_message("Authentication was not successful.",success=False)
 
-    def handle_logout(self, user, password):
-        if self.authenticated and UserManager.logout(user, password):
-            self.user = None
+    def handle_logout(self):
+        if self.authenticated and UserManager.logout(self.username):
+            self.username = None
             self.authenticated = False
             return self.send_message("Logout successful.")
         else:
@@ -112,7 +114,9 @@ class Agent(threading.Thread):
 
 
     def handle_list_instances(self):
-        return self.send_message("\n".join([f"{i.id}: {i.name or ''}" for i in CampaignsManager.listCampaigns()]))
+        data = "\n".join([f"{i.id}: {i.name or ''}" for i in CampaignsManager.listCampaigns()])
+        print(data)
+        return self.send_message("Here is the list of instances",data=data)
 
     def handle_open_instance(self, instance_id):
         if not self.authenticated:

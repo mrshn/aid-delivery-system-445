@@ -133,6 +133,7 @@ class UserManager:
             return None
         new_user = User(username, "default_email", "default_name", password)
         UserManager.__all_users[new_user.id] = new_user
+        return new_user
 
     @staticmethod
     def login( username, password ):
@@ -141,6 +142,13 @@ class UserManager:
             if user.auth(password):
                 return user.login()
         return None
+    
+    @staticmethod
+    def validate_token( username, token ):
+        user = UserManager.search_user(username)
+        if user and user.is_valid_token(token):
+            return True
+        return False
 
     @staticmethod
     def logout(username):
