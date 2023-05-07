@@ -252,7 +252,8 @@ class Campaign:
         for request in self.requests:
             if request.id == request_id:
                 if not len(request._delivery_info):
-                    return request.update(user, *args, **kwargs)
+                    request.update(user, *args, **kwargs)
+                    return True
                 else:
                     return False
         return False
