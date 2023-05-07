@@ -77,6 +77,7 @@ class Agent(threading.Thread):
         # list instances logic goes here
         self.send_message("List of instances goes here.")
 
+    # tekmen will implement
     def handle_open_instance(self, instance_id):
         # open instance logic goes here
         self.instance = instance_id
@@ -84,6 +85,7 @@ class Agent(threading.Thread):
         # activate condition in for instance in msg queue
         self.send_message(f"Instance {instance_id} opened.")
 
+    # tekmen will implement
     def handle_close_instance(self):
         # close instance logic goes here
         self.instance = None
