@@ -84,6 +84,7 @@ class Agent(threading.Thread):
     def handle_list_instances(self):
         self.send_message("\n".join([f"{i.id}: {i.name or ''}" for i in self.campaign.instances]))
 
+    # tekmen will implement
     def handle_open_instance(self, instance_id):
         if not self.authenticated:
             self.send_message("Authentication required.")
@@ -95,6 +96,7 @@ class Agent(threading.Thread):
             self.instance = instance
             self.send_message(f"Instance with id '{instance_id}' opened.")
 
+    # tekmen will implement
     def handle_close_instance(self):
         self.instance = None
         self.send_message("Instance closed.")

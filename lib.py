@@ -329,6 +329,10 @@ class Campaign:
 
         self._campaigns[self.id] = (self)
 
+    @classmethod
+    def getCampaigns(cls):
+        return cls._campaigns
+
     def delete(self):
         # delete from db
         del self._campaigns[self.id]
@@ -417,7 +421,34 @@ class WatchCallback:
         return True
     
     def notify(self, request):
+        MessageQueue.set
         return self.callback(request.get())
+    
+class MessageQueue:
+    _is_notified = {c.id : threading.Condition(threading.Lock()) for c in Campaign.getCampaigns()}
+
+    def __init__(self):
+        self.is_watching = False
+
+    def notifyCampaign(campaign_id):
+        cond = MessageQueue._is_notified[campaign_id]
+        with cond:
+            cond.notify_all
+
+    def watch(self, callback, campaign_id):
+        cond = MessageQueue._is_notified[campaign_id]
+        self.is_watching = True
+        with cond:
+            while True:
+                self.cond.wait()
+                if not self.is_watching:
+                    break
+
+                #callback, item=None, loc=None, urgency=None
+
+    def handleClose(self, campaign_id):
+        self.is_watching = False
+        
 
 
 
