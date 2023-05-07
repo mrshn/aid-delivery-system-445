@@ -20,8 +20,11 @@ class Agent(threading.Thread):
             "list": self.handle_list_instances,
             "open": self.handle_open_instance,
             "close": self.handle_close_instance,
-            "additem": self.handle_add_item
+            "additem": self.handle_add_item,
+            "watch": self.handle_watch
         }
+
+        self._watches = []
 
     def run(self):
         while True:
@@ -92,13 +95,24 @@ class Agent(threading.Thread):
         if not instance:
             self.send_message(f"Instance with id '{instance_id}' not found.")
         else:
-            self.instance = instance
+            self.instance = CampaignsManager.getCampaign(instance_id)
             self.send_message(f"Instance with id '{instance_id}' opened.")
-
+    
+    def handle_watch(self, item, loc, urgency):
+        if not self.instance:
+            self.send_message(f"First open an instance.")
+        else :
+            def callback(request):
+                    self.send_message(f"Request with id : {request.id} added.")
+            watch_id = self.instance.watch(callback, item=item, loc=loc, urgency=urgency)
+            self._watches.append(watch_id)
+            self.send_message(f"New watcher registered with id : {watch_id}")
 
     def handle_close_instance(self):
         self.instance = None
-
+        for watch_id in self._watches:
+            self.instance.unwatch(watch_id)
+        self._watches = []
         self.send_message("Instance closed.")
 
     def handle_add_item(self, obj_id, item_name, quantity, price):
