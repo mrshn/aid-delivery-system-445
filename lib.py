@@ -79,7 +79,7 @@ class Request:
         self.owner = owner
         self._init_items(items) 
         self.geoloc = geoloc
-        self.urgency = urgency
+        self.urgency = Urgency(urgency)
         self.comments = comments
         self.status = "OPEN" # initial status is OPEN
         
@@ -334,7 +334,7 @@ class WatchCallback:
         self.callback = callback
         self.item = item.lower() if item is not None else None
         self.loc = loc
-        self.urgency = urgency
+        self.urgency = Urgency(urgency)
         self.watch_queue = WatchQueue(campaign_id)
         self.startWatcherThread()
 
