@@ -119,7 +119,7 @@ class User:
 
 class UserManager:
     admin = User("admin", "admin_email", "admin_name", "123")
-    __all_users = {}
+    __all_users = { admin.id : admin }
 
     @staticmethod
     def search_user( username: str):
@@ -131,7 +131,7 @@ class UserManager:
     @staticmethod
     def add_user(username, password):
         if UserManager.search_user(username):
-            raise ValueError("User already exists")
+            return None
         new_user = User(username, "default_email", "default_name", password)
         UserManager.__all_users[new_user.id] = new_user
 

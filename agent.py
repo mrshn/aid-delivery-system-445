@@ -4,6 +4,7 @@ import json
 import struct
 
 from lib import Campaign, WatchQueue, CampaignsManager
+from usermanager import UserManager
 
 class Agent(threading.Thread):
     def __init__(self, conn):
@@ -14,8 +15,9 @@ class Agent(threading.Thread):
 
         self.campaign_instance = None # This will be a Campaign instance
         self.requests = {
-            "authenticate": self.handle_authenticate,
             "login": self.handle_login,
+            "register": self.handle_register,
+            "logout": self.handle_logout,
             "new": self.handle_new_instance,
             "list": self.handle_list_instances,
             "open": self.handle_open_instance,
@@ -62,9 +64,15 @@ class Agent(threading.Thread):
             return json.loads(data)
         except:
             return None
+        
+    def handle_register(self, user, password):
+        if UserManager.add_user(user, password):
+            self.send_message("Register is successful. Please login ")
+        else:
+            self.send_message("User already exists.")
 
-    def handle_authenticate(self, user, password):
-        if self.campaign_instance.authenticate(user, password):
+    def handle_login(self, user, password):
+        if UserManager.login(user, password):
             self.user = user
             self.authenticated = True
             self.send_message("Authentication successful.")
@@ -73,8 +81,13 @@ class Agent(threading.Thread):
             self.authenticated = False
             self.send_message("Authentication was not successful.")
 
-    def handle_login(self, user, password):
-        return self.authenticate(user, password)
+    def handle_logout(self, user, password):
+        if self.authenticated and UserManager.logout(user, password):
+            self.user = None
+            self.authenticated = False
+            self.send_message("Logout successful.")
+        else:
+            self.send_message("Logout was not successful.")
 
     def handle_new_instance(self, *args):
         if not self.authenticated:
@@ -118,5 +131,8 @@ class Agent(threading.Thread):
     def handle_add_item(self, obj_id, item_name, quantity, price):
         self.campaign.find(obj_id).addrequest(item_name, quantity, price)
         self.send_message(f"Item {item_name} added to object {obj_id}.")
+
+    def send_message(self, message):
+        self.conn.sendall(message.encode() + b"\n")
 
 
