@@ -22,7 +22,11 @@ client1.call_update_catalog_item("nameItem","updatednameItem",["synm10","synm20"
 client1.call_add_catalog_item("searchedItem",["synm---","synm---"])
 client1.call_search_catalog_item("searchedItem")
 
+
 client1.call_open(0)
+
+client1.call_close()
+
 
 sys.exit()
 
