@@ -341,7 +341,7 @@ class Campaign:
         self.requests.append(request)
         for callback in self.watch_callbacks:
             if callback.matches_query(request):
-                callback.notify(request)
+                callback.notify(self.id, request)
         return request.id
     
     def removerequest(self, user, request_id):
@@ -420,35 +420,42 @@ class WatchCallback:
             return False
         return True
     
-    def notify(self, request):
-        MessageQueue.set
-        return self.callback(request.get())
-    
-class MessageQueue:
+    def notify(self, campaign_id, request):
+        #messagequeue 
+        WatchQueue.notifyCampaign(campaign_id, request)
+        
+# tested    
+class WatchQueue:
     _is_notified = {c.id : threading.Condition(threading.Lock()) for c in Campaign.getCampaigns()}
+    _active_requests = {}
+    _mutex = threading.Lock()
 
-    def __init__(self):
+    # one instance can only watch single campaign object
+    def __init__(self, campaign_id):
+        self.campaign_id = campaign_id
         self.is_watching = False
 
-    def notifyCampaign(campaign_id):
-        cond = MessageQueue._is_notified[campaign_id]
-        with cond:
-            cond.notify_all
+    @staticmethod
+    def notifyCampaign(campaign_id, request):
+        with WatchQueue._mutex:
+            WatchQueue._active_requests[campaign_id] = request
+            cond = WatchQueue._is_notified[campaign_id]
+            with cond:
+                cond.notify_all()
 
     def watch(self, callback, campaign_id):
-        cond = MessageQueue._is_notified[campaign_id]
+        cond = WatchQueue._is_notified[campaign_id]
         self.is_watching = True
         with cond:
             while True:
                 self.cond.wait()
-                if not self.is_watching:
-                    break
+                with cond:
+                    if not self.is_watching:
+                        break
+                    callback(WatchQueue._active_requests[campaign_id])
 
-                #callback, item=None, loc=None, urgency=None
-
-    def handleClose(self, campaign_id):
+    def handleClose(self):
         self.is_watching = False
-        
 
 
 
