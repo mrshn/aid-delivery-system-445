@@ -6,6 +6,7 @@ import hashlib
 import threading
 from typing import List, Tuple
 from inspect import getfullargspec
+from multiprocessing import RLock
 
 
 # Decorator to check writeable fields
@@ -393,17 +394,26 @@ class Campaign:
                 return True
         return False
     
+campaign_manager_mutex = RLock()
 class CampaignsManager():
     _campaigns = []
+     
     @staticmethod
     def addCampaign(name, description):
         campaign = Campaign(name, description)
-        CampaignsManager._campaigns.append(campaign)
+
+        global campaign_manager_mutex
+        with campaign_manager_mutex:
+            CampaignsManager._campaigns.append(campaign)
         return campaign
+    
     def getCampaign(campaign_id):
-        for c in CampaignsManager._campaigns:
-            if c.id == campaign_id:
-                return c
+
+        global campaign_manager_mutex
+        with campaign_manager_mutex:
+            for c in CampaignsManager._campaigns:
+                if c.id == campaign_id:
+                    return c
 
 class Notification:
     """
