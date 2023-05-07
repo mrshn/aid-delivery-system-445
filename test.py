@@ -16,6 +16,9 @@ client1.call_list()
 
 client1.call_open(0)
 
+client1.call_close()
+
+
 
 print("annan")
 sys.exit()
