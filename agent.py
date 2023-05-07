@@ -3,7 +3,7 @@ import threading
 import json
 import struct
 
-from lib import Campaign
+from lib import Campaign, WatchQueue, CampaignsManager
 
 class Agent(threading.Thread):
     def __init__(self, conn):
@@ -77,18 +77,23 @@ class Agent(threading.Thread):
         # list instances logic goes here
         self.send_message("List of instances goes here.")
 
-    # tekmen will implement
     def handle_open_instance(self, instance_id):
-        # open instance logic goes here
-        self.instance = instance_id
-        # close if open instance
-        # activate condition in for instance in msg queue
-        self.send_message(f"Instance {instance_id} opened.")
+        self.instance = CampaignsManager().getCampaign(instance_id)
+        if (not self.instance):
+            # return error message sayin campaign not exists
+            self.send_message(f"Instance {instance_id} does not exist.")
+        else:
+            # close open instance
+            # self.instance.unwatch
 
-    # tekmen will implement
+            self.instance.watch(self.instance.id)
+            # activate condition in for instance in msg queue
+            self.send_message(f"Instance {instance_id} opened.")
+
     def handle_close_instance(self):
         # close instance logic goes here
         self.instance = None
+
         self.send_message("Instance closed.")
 
     def handle_add_item(self, obj_id, item_name, quantity, price):

@@ -381,16 +381,29 @@ class Campaign:
     
     def watch(self, callback, item=None, loc=None, urgency=None):
         watch_id = str(uuid.uuid4())
-        self.watch_callbacks.append(WatchCallback(watch_id, callback, item, loc, urgency))
+        self.watch_callbacks.append(WatchCallback(watch_id, self.id, callback, item, loc, urgency))
+
         return watch_id
     
     def unwatch(self, watch_id):
         for callback in self.watch_callbacks:
             if callback.id == watch_id:
+                callback.remove()
                 self.watch_callbacks.remove(callback)
                 return True
         return False
-
+    
+class CampaignsManager():
+    _campaigns = []
+    @staticmethod
+    def addCampaign(name, description):
+        campaign = Campaign(name, description)
+        CampaignsManager._campaigns.append(campaign)
+        return campaign
+    def getCampaign(campaign_id):
+        for c in CampaignsManager._campaigns:
+            if c.id == campaign_id:
+                return c
 
 class Notification:
     """
@@ -404,12 +417,22 @@ class Notification:
 
 
 class WatchCallback:
-    def __init__(self, id, callback, item=None, loc=None, urgency=None):
+    def __init__(self, id, campaign_id, callback, item=None, loc=None, urgency=None):
         self.id = id
+        self.campaign_id = campaign_id
         self.callback = callback
         self.item = item.lower() if item is not None else None
         self.loc = loc
         self.urgency = urgency
+        self.watch_queue = WatchQueue(campaign_id)
+        self.startWatcherThread()
+
+    def startWatcherThread(self):
+        def watchingThread(callback, wq):
+            wq.watch(callback)
+
+        t = threading.Thread(target=watchingThread, args=(self.callback, self.watchqueue))
+        t.start()
     
     def matches_query(self, request):
         if self.item is not None and self.item not in [i.lower() for i in request.items]:
@@ -420,11 +443,15 @@ class WatchCallback:
             return False
         return True
     
+    def remove(self):
+        self.watch_queue.handleClose()
+
+    
     def notify(self, campaign_id, request):
         #messagequeue 
         WatchQueue.notifyCampaign(campaign_id, request)
         
-# tested    
+# unit tested    
 class WatchQueue:
     _is_notified = {c.id : threading.Condition(threading.Lock()) for c in Campaign.getCampaigns()}
     _active_requests = {}
