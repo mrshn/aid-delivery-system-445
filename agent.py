@@ -22,13 +22,14 @@ class Agent(threading.Thread):
             "list": self.handle_list_instances,
             "open": self.handle_open_instance,
             "close": self.handle_close_instance,
+            "watch": self.handle_watch,
             "addcatalogitem": self.handle_add_catalog_item,
             "updatecatalogitem": self.handle_update_catalog_item,
             "searchcatalogitem": self.handle_search_catalog_item,
             "addrequest": self.handle_add_request,
             "updaterequest": self.handle_update_request,
             "deleterequest": self.handle_delete_request,
-            "watch": self.handle_watch
+            "markavilable": self.handle_mark_available,
         }
 
         self._watches = []
@@ -115,7 +116,6 @@ class Agent(threading.Thread):
 
     def handle_list_instances(self):
         data = "\n".join([f"{i.id}: {i.name or ''}" for i in CampaignsManager.listCampaigns()])
-        print(data)
         return self.send_message("Here is the list of instances",data=data)
 
     def handle_open_instance(self, instance_id):
@@ -138,7 +138,7 @@ class Agent(threading.Thread):
             self.send_message(f"First open an instance.")
         else :
             def callback(request):
-                    self.send_message(f"Request with id : {request.id} added.")
+                    self.send_message(f"Watch notifications : Request with id {request.id} added.")
             watch_id = self.instance.watch(callback, item=item, loc=loc)
             self._watches.append(watch_id)
             self.send_message(f"New watcher registered with id : {watch_id}")
@@ -148,10 +148,10 @@ class Agent(threading.Thread):
             return self.send_message("Authentication required.",success=False)
         if self.instance:
             instanceid = self.instance.id
-            self.instance = None
             for watch_id in self._watches:
                 self.instance.unwatch(watch_id)
             self._watches = []
+            self.instance = None
             return self.send_message(f"Instance with id {instanceid} closed.")
 
     def handle_add_request(self, items: List[Tuple[str,int]], geoloc: Tuple[float,float],  urgency: str):
@@ -191,6 +191,9 @@ class Agent(threading.Thread):
         if item:
             return self.send_message(f"Item id : {item.id} \n Item name : {item.name} \n Item synonyms : {item.synonyms}")
         self.send_message("Item not found", success=False)
+
+    def handle_mark_available(self, items: List[Tuple[str,int]], geoloc: Tuple[float,float],  urgency: str):
+        pass
 
     def send_message(self, message, data = "No data", success = True):
         response = {"response": message,
