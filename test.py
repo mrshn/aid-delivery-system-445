@@ -5,7 +5,7 @@ import time
 
 from client import Client
 
-client1 = Client("localhost", 1423)
+client1 = Client("localhost", 1423, "LOGGER 1")
 
 client1.call_register("emre", 1234)
 time.sleep(0.1)
@@ -89,33 +89,56 @@ print("HERE IT BREAKS 4")
 time.sleep(0.1)
 client1.call_add_request([("nameItem", 7)], (0.2, 0.8), 2 )
 
-time.sleep(0.1)
 
+print("---------------- HERE CLIENT 2 COMES -------------------")
+time.sleep(0.1)
+client2 = Client("localhost", 1423, "LOGGER 2")
+
+time.sleep(0.1)
+client2.call_register("batuhan", 1234)
+
+time.sleep(0.1)
+client2.call_login("batuhan", 1234)
+
+time.sleep(0.1)
+client2.call_open(0)
+
+time.sleep(0.1)
 print("HERE IT BREAKS 5")
-client1.call_mark_available_request(2, [("nameItem", 3)], 1, (0.2, 0.8), "supply comments")
+client2.call_mark_available_request(2, [("nameItem", 3)], 1, (0.2, 0.8), "supply comments")
+
+time.sleep(0.1)
+client2.call_watch("nameItem", (0.0, 0.0))
+
+time.sleep(0.1)
+client1.call_add_request([("nameItem", 7)], (0.2, 0.8), 2 )
+
+time.sleep(0.5)
+client2.call_close()
+
+time.sleep(0.1)
+client1.call_add_request([("nameItem", 7)], (0.2, 0.8), 2 )
+
+time.sleep(0.5)
+client2.call_logout()
+
+print("---------------- HERE CLIENT 2 EXITS -------------------")
+
 time.sleep(0.3)
 print("HERE IT BREAKS 6")
 client1.call_pick_request(2,client1.call_get_supply_ids())
 time.sleep(0.1)
 print("HERE IT BREAKS 7")
 client1.call_arrived_request(2,0)
-time.sleep(0.1)
 
+time.sleep(0.7)
+client1.call_close()
 
+# should reject watching
+time.sleep(0.7)
+client1.call_watch("nameItem", (0.0, 0.0))
 
 time.sleep(0.5)
 client1.call_logout()
-
-
-#client1.call_pick_request(2, [("nameItem", 3)], 1, (0.2, 0.8), "supply comments")
-#client1.call_arrived_request(2, [("nameItem", 3)], 1, (0.2, 0.8), "supply comments")
-
-
-#time.sleep(0.1)
-#client1.call_close()
-
-#time.sleep(0.1)
-#client1.call_watch("nameItem", (0.0, 0.0))
-
 
 sys.exit()

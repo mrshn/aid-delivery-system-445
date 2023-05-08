@@ -162,7 +162,7 @@ class Request:
         timer.start()
 
         if (self.supplyNotificationCB):
-            self.supplyNotificationCB(f"Supplier marked following items as available : {available_items}")
+            self.supplyNotificationCB(f"{user.username} marked following items as available : {available_items}")
 
         return supply_id
 

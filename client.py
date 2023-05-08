@@ -5,7 +5,7 @@ from typing import Tuple, List
 
 class Client:
     
-    def __init__(self, host, port):
+    def __init__(self, host, port, name=""):
         self.host = host
         self.port = port
         self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -14,6 +14,7 @@ class Client:
         self.token = None
         self.response_receiver = False
         self.supply_id = None
+        self.name = name
 
     # started after login 
     # closed after logout 
@@ -22,10 +23,10 @@ class Client:
         def response_handler() :
             while self.response_receiver:
                 response = self.receive_response()
-                print(f"RESPONSE EVENT : {response}")
+                print(self.name, f": RESPONSE EVENT : {response}")
                 if response is not None  and response["response"] =="Items marked available":
                     self.supply_id = response["data"]
-            print("Client is logged out")
+            print(self.name, ": Client is logged out")
         thread = threading.Thread(target=response_handler, args=())
         thread.start()
 
@@ -37,10 +38,10 @@ class Client:
                    "args": [username, password] }
         
         if self.send_command(command,islogin=True):
-            print("Client send_command in call_login")
+            print(self.name, ": Client send_command in call_login")
         if not self.response_receiver:
             response = self.receive_response()
-            print("Client recieved in call_login" , response)
+            print(self.name, ": Client recieved in call_login" , response)
             if response["success"]:
                 self.token = response["data"]
                 self.authenticated = True
@@ -53,7 +54,7 @@ class Client:
         
         self.stop_response_receiver()
         if self.send_command(command):
-            print("Client send_command in call_logout")
+            print(self.name, ": Client send_command in call_logout")
 
     
     def call_register(self, username, password):
@@ -61,11 +62,11 @@ class Client:
                     "args" : [username,password] }
         
         if self.send_command(command,islogin=True):
-            print("Client send_command in call_register")
+            print(self.name, ": Client send_command in call_register")
 
         if not self.response_receiver:
             response = self.receive_response()
-            print("Client recieved in call_register" , response)
+            print(self.name, ": Client recieved in call_register" , response)
 
         return response
     
@@ -76,7 +77,7 @@ class Client:
             "args": [items,geoloc,urgency]
         }
         if self.send_command(command):
-            print("Client send_command in call_add_request")
+            print(self.name, ": Client send_command in call_add_request")
         
     
     def call_update_request(self, reqId,items: List[Tuple[str,int]], geoloc: Tuple[float,float],  urgency: str):
@@ -86,7 +87,7 @@ class Client:
             "args": [reqId,items,geoloc,urgency]
         }
         if self.send_command(command):
-            print("Client send_command in call_update_request")
+            print(self.name, ": Client send_command in call_update_request")
         
     
     def call_delete_request(self, request_id):
@@ -96,7 +97,7 @@ class Client:
             "args": [request_id]
         }
         if self.send_command(command):
-            print("Client send_command in call_delete_request")
+            print(self.name, ": Client send_command in call_delete_request")
         
 
     def call_list(self):
@@ -106,7 +107,7 @@ class Client:
             "args" : []
         }
         if self.send_command(command):
-            print("Client send_command in call_list")
+            print(self.name, ": Client send_command in call_list")
         
 
     
@@ -117,7 +118,7 @@ class Client:
             "args" : [name,synonyms]
         }
         if self.send_command(command):
-            print("Client send_command in call_add_catalog_item")
+            print(self.name, ": Client send_command in call_add_catalog_item")
         
 
     def call_update_catalog_item(self,old_name,name,synonyms):
@@ -127,7 +128,7 @@ class Client:
             "args" : [old_name,name,synonyms]
         }
         if self.send_command(command):
-            print("Client send_command in call_update_catalog_item")
+            print(self.name, ": Client send_command in call_update_catalog_item")
         
     
     def call_search_catalog_item(self,name):
@@ -137,7 +138,7 @@ class Client:
             "args" : [name]
         }
         if self.send_command(command):
-            print("Client send_command in call_search_catalog_item")
+            print(self.name, ": Client send_command in call_search_catalog_item")
 
 
     def call_new_instance(self, name, description):
@@ -147,7 +148,7 @@ class Client:
             "args": [name, description]
         }
         if self.send_command(command):
-            print("Client send_command in call_new_instance")
+            print(self.name, ": Client send_command in call_new_instance")
 
     
     def call_open(self, campaign_id):
@@ -157,16 +158,16 @@ class Client:
             "args": [campaign_id]
         }
         if self.send_command(command):
-            print("Client send_command in call_open")
+            print(self.name, ": Client send_command in call_open")
   
     
     def call_close(self):
         command = {
-            "command" : "open",
+            "command" : "close",
             "args": []
         }
         if self.send_command(command):
-            print("Client send_command in call_close")
+            print(self.name, ": Client send_command in call_close")
     
     
     def call_watch(self, item, loc):
@@ -175,7 +176,7 @@ class Client:
             "args": [item, loc]
         }
         if self.send_command(command):
-            print("Client send_command in call_watch")
+            print(self.name, ": Client send_command in call_watch")
       
 
     # TODO: test
@@ -185,7 +186,7 @@ class Client:
             "args": [requestid, items, expire, geoloc, comments]
         }
         if self.send_command(command):
-            print("Client send_command in call_mark_available_request")
+            print(self.name, ": Client send_command in call_mark_available_request")
         
     # TODO: implement
     def call_get_supply_ids(self):
@@ -212,7 +213,7 @@ class Client:
             "args": [requestid,supply_id]
         }
         if self.send_command(command):
-            print("Client send_command in call_arrived_request")
+            print(self.name, ": Client send_command in call_arrived_request")
         
 
     def send_command(self, json_command,islogin=False):
@@ -224,7 +225,7 @@ class Client:
             self.socket.sendall(message)
             return True
         else:
-            print("From Client:  Please login first")
+            print(self.name, ": From Client:  Please login first")
             return False
 
     def receive_response(self):
@@ -235,7 +236,7 @@ class Client:
             try:
                 msg = json.loads(data.decode())
                 if not msg["success"]:
-                    print("Your request failed to be executed")
+                    print(self.name, ": Your request failed to be executed")
                 return msg
             except ValueError:
                 continue

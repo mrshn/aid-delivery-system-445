@@ -2,6 +2,7 @@ import socket
 import threading
 import json
 from typing import Tuple, List
+import time
 
 from lib import CampaignsManager, Request, Item
 from usermanager import UserManager
@@ -71,6 +72,7 @@ class Agent(threading.Thread):
     def read_message(self):
         data = b""
         while True:
+            time.sleep(0)
             chunk = self.conn.recv(1024)
             data += chunk
             try:
@@ -131,17 +133,17 @@ class Agent(threading.Thread):
         if not instance:
             return self.send_message(f"Instance with id '{instance_id}' not found.",success=False)
         else:
-            self.instance = CampaignsManager.getCampaign(instance_id)
+            self.instance = instance
             return self.send_message(f"Instance with id '{instance_id}' opened.")
     
     def handle_watch(self, item, loc):
         if not self.authenticated:
-            self.send_message("Authentication required.")
+            self.send_message("Authentication required.", success=False)
         if not self.instance:
-            self.send_message(f"First open an instance.")
+            self.send_message(f"First open an instance.", success=False)
         else :
             def callback(request):
-                    self.send_message(f"Watch notifications : Request with id {request.id} added.")
+                    self.send_message(f"NOTIFICATION : Watch notifications : Request with id {request.id} added.")
             watch_id = self.instance.watch(callback, item=item, loc=loc)
             self._watches.append(watch_id)
             self.send_message(f"New watcher registered with id : {watch_id}")
@@ -159,7 +161,7 @@ class Agent(threading.Thread):
 
     def handle_add_request(self, items: List[Tuple[str,int]], geoloc: Tuple[float,float],  urgency: str):
         def supplyNotificationCallback(message):
-            self.send_message(f"Request {r.id} supply update : ", message)
+            self.send_message(f"NOTIFICATION : Request {r.id} supply update : ", message)
         r = Request( items, geoloc, urgency, supplyNotificationCB=supplyNotificationCallback)
         self.instance.addrequest(r)
         return self.send_message(f"New request with id {r.id} added to campaign with id {self.instance.id}. \n Request info : \n {r.get()}")
