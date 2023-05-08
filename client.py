@@ -13,9 +13,10 @@ class Client:
         self.authenticated = False
         self.token = None
         self.response_receiver = False
-
-    # start this after login & register
+        # start this after login & register
     def start_response_receiver(self):
+        if self.response_receiver:
+            self.cond.wait()
         def response_handler() :
             self.response_receiver = True
             while self.response_receiver:
@@ -71,10 +72,6 @@ class Client:
         }
         self.send_command(command)
         print("Client send_command in call_add_request")
-        response = self.receive_response()
-        print("Client recieved in call_add_request" , response)
-
-        return response
     
     def call_update_request(self, reqId,items: List[Tuple[str,int]], geoloc: Tuple[float,float],  urgency: str):
 
@@ -84,10 +81,6 @@ class Client:
         }
         self.send_command(command)
         print("Client send_command in call_update_request")
-        response = self.receive_response()
-        print("Client recieved in call_update_request" , response)
-
-        return response
     
     def handle_delete_request(self, request_id):
 
@@ -97,10 +90,6 @@ class Client:
         }
         self.send_command(command)
         print("Client send_command in handle_delete_request")
-        response = self.receive_response()
-        print("Client recieved in handle_delete_request" , response)
-
-        return response
 
     def call_list(self):
 
@@ -164,13 +153,13 @@ class Client:
         self.send_command(command)
         print("Client send_command in call_close")
     
-    def call_watch(self):
+    def call_watch(self, item, loc):
         command = {
-            "command" : "open",
-            "args": []
+            "command" : "watch",
+            "args": [item, loc]
         }
         self.send_command(command)
-        print("Client send_command in call_close")
+        print("Client send_command in call_watch")
 
     def send_command(self, json_command):
         json_command["token"] = self.token 

@@ -112,9 +112,6 @@ class Request:
             else:
                 result[f] = getattr(self, f)
 
-        for f in result:
-            print(f"type of {f} is {type(result[f])}")
-
         return json.dumps(result)
 
     # return json string representation
@@ -204,7 +201,7 @@ class Request:
             self.status = "CLOSED"
 
     def location_within(self, loc):
-        return math.sqrt((self.geoloc[0] - loc[0])^2 + (self.geoloc[1] - loc[1])^2) < self.distance
+        return math.sqrt((self.geoloc[0] - loc[0]) * (self.geoloc[0] - loc[0]) + (self.geoloc[1] - loc[1]) * (self.geoloc[1] - loc[1])) < self.distance
 
 
 class Campaign:
@@ -273,7 +270,7 @@ class Campaign:
                 continue
             if loc is not None and not request.location_within(loc):
                 continue
-            if urgency is not None and request.urgency < urgency:
+            if urgency is not None and request.urgency.value < urgency.value:
                 continue
             matching_requests.append(request)
         return matching_requests
@@ -281,7 +278,6 @@ class Campaign:
     def watch(self, callback, item=None, loc=None, urgency=None):
         watch_id = str(uuid.uuid4())
         self.watch_callbacks.append(WatchCallback(watch_id, self.id, callback, item, loc, urgency))
-
         return watch_id
     
     def unwatch(self, watch_id):
@@ -352,7 +348,7 @@ class WatchCallback:
             return False
         if self.loc is not None and not request.location_within(self.loc):
             return False
-        if self.urgency is not None and request.urgency < self.urgency:
+        if self.urgency is not None and request.urgency.value < self.urgency.value:
             return False
         return True
     
@@ -392,10 +388,9 @@ class WatchQueue:
         with cond:
             while True:
                 cond.wait()
-                with cond:
-                    if not self.is_watching:
-                        break
-                    callback(WatchQueue._active_requests[self.campaign_id])
+                if not self.is_watching:
+                    break
+                callback(WatchQueue._active_requests[self.campaign_id])
 
     def handleClose(self):
         self.is_watching = False

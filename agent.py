@@ -116,7 +116,6 @@ class Agent(threading.Thread):
 
     def handle_list_instances(self):
         data = "\n".join([f"{i.id}: {i.name or ''}" for i in CampaignsManager.listCampaigns()])
-        print(data)
         return self.send_message("Here is the list of instances",data=data)
 
     def handle_open_instance(self, instance_id):
@@ -139,7 +138,7 @@ class Agent(threading.Thread):
             self.send_message(f"First open an instance.")
         else :
             def callback(request):
-                    self.send_message(f"Request with id : {request.id} added.")
+                    self.send_message(f"Watch notifications : Request with id {request.id} added.")
             watch_id = self.instance.watch(callback, item=item, loc=loc)
             self._watches.append(watch_id)
             self.send_message(f"New watcher registered with id : {watch_id}")
