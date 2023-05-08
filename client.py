@@ -1,5 +1,6 @@
 import socket
 import json
+import threading
 from typing import Tuple, List
 
 class Client:
@@ -11,6 +12,20 @@ class Client:
         self.socket.connect((self.host, self.port))
         self.authenticated = False
         self.token = None
+        self.response_receiver = False
+
+    # start this after login & register
+    def start_response_receiver(self):
+        def response_handler() :
+            self.response_receiver = True
+            while self.response_receiver:
+                response = self.receive_response()
+                print(f"RESPONSE EVENT : {response}")
+        thread = threading.Thread(target=response_handler, args=())
+        thread.start()
+
+    def stop_response_receiver(self):
+        self.response_receiver = False
 
     def call_login(self, username, password):
         command = {"command": "login",
@@ -24,20 +39,18 @@ class Client:
         if response["success"]:
             self.token = response["data"]
             self.authenticated = True
+            self.start_response_receiver()
 
         return response
     
     def call_logout(self ):
+        self.stop_response_receiver
         command = {"command": "logout",
                     "args" : []
                    }
         
         self.send_command(command)
         print("Client send_command in call_logout")
-        response = self.receive_response()
-        print("Client recieved in call_logout" , response)
- 
-        return response
     
     def call_register(self, username, password):
         command = {"command": "register", 
@@ -89,7 +102,6 @@ class Client:
 
         return response
 
-
     def call_list(self):
 
         command = {
@@ -98,10 +110,6 @@ class Client:
         }
         self.send_command(command)
         print("Client send_command in call_list")
-        response = self.receive_response()
-        print("Client recieved in call_list" , response)
-
-        return response
     
     def call_add_catalog_item(self,name,synonyms):
 
@@ -111,11 +119,7 @@ class Client:
         }
         self.send_command(command)
         print("Client send_command in call_add_catalog_item")
-        response = self.receive_response()
-        print("Client recieved in call_add_catalog_item" , response)
 
-        return response
-        
     def call_update_catalog_item(self,old_name,name,synonyms):
 
         command = {
@@ -124,10 +128,6 @@ class Client:
         }
         self.send_command(command)
         print("Client send_command in call_update_catalog_item")
-        response = self.receive_response()
-        print("Client recieved in call_update_catalog_item" , response)
-
-        return response
     
     def call_search_catalog_item(self,name):
 
@@ -137,11 +137,7 @@ class Client:
         }
         self.send_command(command)
         print("Client send_command in call_search_catalog_item")
-        response = self.receive_response()
-        print("Client recieved in call_search_catalog_item" , response)
 
-        return response
-    
     def call_new_instance(self, name, description):
 
         command = {
@@ -150,10 +146,6 @@ class Client:
         }
         self.send_command(command)
         print("Client send_command in call_new_instance")
-        response = self.receive_response()
-        print("Client recieved in call_new_instance" , response)
-
-        return response
     
     def call_open(self, campaign_id):
 
@@ -163,34 +155,22 @@ class Client:
         }
         self.send_command(command)
         print("Client send_command in call_open")
-        response = self.receive_response()
-        print("Client recieved in call_open" , response)
-
-        return response
     
     def call_close(self):
         command = {
-            "command" : "close",
+            "command" : "open",
             "args": []
         }
         self.send_command(command)
         print("Client send_command in call_close")
-        response = self.receive_response()
-        print("Client recieved in call_close" , response)
-
-        return response
     
-    def call_watch(self, item, loc):
+    def call_watch(self):
         command = {
-            "command" : "watch",
-            "args": [item, loc]
+            "command" : "open",
+            "args": []
         }
         self.send_command(command)
-        print("Client send_command in call_watch")
-        response = self.receive_response()
-        print("Client recieved in call_watch" , response)
-
-        return response
+        print("Client send_command in call_close")
 
     def send_command(self, json_command):
         json_command["token"] = self.token 

@@ -22,13 +22,14 @@ class Agent(threading.Thread):
             "list": self.handle_list_instances,
             "open": self.handle_open_instance,
             "close": self.handle_close_instance,
+            "watch": self.handle_watch,
             "addcatalogitem": self.handle_add_catalog_item,
             "updatecatalogitem": self.handle_update_catalog_item,
             "searchcatalogitem": self.handle_search_catalog_item,
             "addrequest": self.handle_add_request,
             "updaterequest": self.handle_update_request,
             "deleterequest": self.handle_delete_request,
-            "watch": self.handle_watch
+            "markavilable": self.handle_mark_available,
         }
 
         self._watches = []
@@ -191,6 +192,9 @@ class Agent(threading.Thread):
         if item:
             return self.send_message(f"Item id : {item.id} \n Item name : {item.name} \n Item synonyms : {item.synonyms}")
         self.send_message("Item not found", success=False)
+
+    def handle_mark_available(self, items: List[Tuple[str,int]], geoloc: Tuple[float,float],  urgency: str):
+        pass
 
     def send_message(self, message, data = "No data", success = True):
         response = {"response": message,
