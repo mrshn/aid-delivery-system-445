@@ -27,18 +27,6 @@ time.sleep(0.1)
 
 client1.call_list()
 
-#time.sleep(0.1)
-#client1.call_logout()
-
-#time.sleep(0.1)
-#client1.call_logout()
-
-#time.sleep(0.1)
-# logouttan sonra client recceive threadi kapanmazsa, 
-# loginin bunun cevabunu o consume ettiği için logining recv'i bekliyor
-# login yaparken yeni client instancesi oluşturulursa sorun çözülür
-#client1.call_login("emre", 1234)
-
 time.sleep(0.1)
 
 client1.call_add_catalog_item("nameItem",["synm1","synm2"])
@@ -140,5 +128,3 @@ client1.call_watch("nameItem", (0.0, 0.0))
 
 time.sleep(0.5)
 client1.call_logout()
-
-sys.exit()

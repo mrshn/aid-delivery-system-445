@@ -72,7 +72,7 @@ class Agent(threading.Thread):
     def read_message(self):
         data = b""
         while True:
-            time.sleep(0)
+            time.sleep(0.00001)
             chunk = self.conn.recv(1024)
             data += chunk
             try:
