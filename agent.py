@@ -30,6 +30,9 @@ class Agent(threading.Thread):
             "updaterequest": self.handle_update_request,
             "deleterequest": self.handle_delete_request,
             "markavilable": self.handle_mark_available,
+            "pick": self.handle_pick,
+            "arrived": self.handle_arrived,
+
         }
 
         self._watches = []
@@ -83,6 +86,8 @@ class Agent(threading.Thread):
             return self.send_message("Register was not successful", success=False)
 
     def handle_login(self, username, password):
+        if self.authenticated:
+            return self.send_message("You are already logged in , logout first please",success=False)
         token =  UserManager.login(username, password)
         if token:
             self.username = username
@@ -103,15 +108,13 @@ class Agent(threading.Thread):
 
     def handle_new_instance(self, *args):
         # *args are  [name, description]
-        if not self.authenticated:
-            return self.send_message("Authentication required.",success=False)
         self.instance = None 
         instance_name = args[0] if len(args) > 0 else None
         instance_description = args[1] if len(args) > 1 else None
         if not instance_name  or not instance_description:
             return self.send_message("instance_name or instance_description can not be empty.",success=False)
         instance = CampaignsManager.addCampaign(instance_name,instance_description)
-        self.send_message("New instance created ", data= f"id={instance.id}, name={instance_name}, description={instance_description}")
+        return self.send_message("New instance created ", data= f"id={instance.id}, name={instance_name}, description={instance_description}")
 
 
     def handle_list_instances(self):
@@ -193,9 +196,17 @@ class Agent(threading.Thread):
         self.send_message("Item not found", success=False)
 
     def handle_mark_available(self, requestid: int, items: List[Tuple[str,int]], expire: int, geoloc: Tuple[float,float], comments: str):
-        self.instance.findrequest(requestid).markavailable(UserManager.search_user(username=self.username),
+        supply_id =  self.instance.findrequest(requestid).markavailable(UserManager.search_user(username=self.username),
                                                            items, expire, geoloc, comments)
-        self.send_message("Items marked available")
+        self.send_message("Items marked available",data=supply_id)
+    
+    def handle_pick(self, requestid, supply_id):
+        self.instance.findrequest(requestid).pick(supply_id)
+        self.send_message("Items picked")
+
+    def handle_arrived(self, requestid, supply_id):
+        self.instance.findrequest(requestid).arrived(supply_id)
+        self.send_message("Items arrived")
 
     def send_message(self, message, data = "No data", success = True):
         response = {"response": message,

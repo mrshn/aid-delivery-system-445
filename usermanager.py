@@ -47,6 +47,7 @@ def authorize(func):
         return func(self, user, *args, **kwargs)
     return wrapper #this is the fun_obj mentioned in the above content
 
+from multiprocessing import RLock
 
 class User:
     __global_id_counter = 0
@@ -115,7 +116,7 @@ class User:
     def __str__(self):
         str(self.get())
 
-
+user_manager_mutex = RLock()
 class UserManager:
     admin = User("admin", "admin_email", "admin_name", "123")
     __all_users = { admin.id : admin }
