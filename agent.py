@@ -131,7 +131,7 @@ class Agent(threading.Thread):
             self.instance = CampaignsManager.getCampaign(instance_id)
             return self.send_message(f"Instance with id '{instance_id}' opened.")
     
-    def handle_watch(self, item, loc, urgency):
+    def handle_watch(self, item, loc):
         if not self.authenticated:
             self.send_message("Authentication required.")
         if not self.instance:
@@ -139,7 +139,7 @@ class Agent(threading.Thread):
         else :
             def callback(request):
                     self.send_message(f"Request with id : {request.id} added.")
-            watch_id = self.instance.watch(callback, item=item, loc=loc, urgency=urgency)
+            watch_id = self.instance.watch(callback, item=item, loc=loc)
             self._watches.append(watch_id)
             self.send_message(f"New watcher registered with id : {watch_id}")
 
