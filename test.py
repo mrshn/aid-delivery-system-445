@@ -83,6 +83,10 @@ print("HERE IT BREAKS 4")
 time.sleep(0.1)
 client1.call_add_request([("nameItem", 7)], (0.2, 0.8), 2 )
 
+time.sleep(0.1)
+
+client1.call_mark_available(2, [("nameItem", 3)], 1, (0.2, 0.8), "supply comments")
+
 #time.sleep(0.1)
 #client1.call_close()
 

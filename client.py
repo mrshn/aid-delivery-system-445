@@ -161,6 +161,14 @@ class Client:
         self.send_command(command)
         print("Client send_command in call_watch")
 
+    def call_mark_available(self, requestid, items, expire, geoloc, comments):
+        command = {
+            "command" : "markavilable",
+            "args": [requestid, items, expire, geoloc, comments]
+        }
+        self.send_command(command)
+        print("Client send_command in call_mark_available")
+
     def send_command(self, json_command):
         json_command["token"] = self.token 
 

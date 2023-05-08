@@ -156,7 +156,7 @@ class Agent(threading.Thread):
 
     def handle_add_request(self, items: List[Tuple[str,int]], geoloc: Tuple[float,float],  urgency: str):
         def supplyNotificationCallback(message):
-            self.send_message(f"New request with id {r.id} update : ", message)
+            self.send_message(f"Request {r.id} supply update : ", message)
         r = Request( items, geoloc, urgency, supplyNotificationCB=supplyNotificationCallback)
         self.instance.addrequest(r)
         return self.send_message(f"New request with id {r.id} added to campaign with id {self.instance.id}. \n Request info : \n {r.get()}")
@@ -192,8 +192,10 @@ class Agent(threading.Thread):
             return self.send_message(f"Item id : {item.id} \n Item name : {item.name} \n Item synonyms : {item.synonyms}")
         self.send_message("Item not found", success=False)
 
-    def handle_mark_available(self, items: List[Tuple[str,int]], geoloc: Tuple[float,float],  urgency: str):
-        pass
+    def handle_mark_available(self, requestid: int, items: List[Tuple[str,int]], expire: int, geoloc: Tuple[float,float], comments: str):
+        self.instance.findrequest(requestid).markavailable(UserManager.search_user(username=self.username),
+                                                           items, expire, geoloc, comments)
+        self.send_message("Items marked available")
 
     def send_message(self, message, data = "No data", success = True):
         response = {"response": message,

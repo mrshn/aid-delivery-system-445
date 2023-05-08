@@ -162,7 +162,7 @@ class Request:
         timer.start()
 
         if (self.supplyNotificationCB):
-            self.supplyNotificationCB(f"New items added, items : {available_items}")
+            self.supplyNotificationCB(f"Supplier marked following items as available : {available_items}")
 
         return supply_id
 
@@ -262,6 +262,13 @@ class Campaign:
             if request.id == request_id:
                 return request.get()
         return None
+    
+    def findrequest(self, request_id):
+        for request in self.requests:
+            if request.id == request_id:
+                return request
+        return None
+    
     
     def query(self, item=None, loc=None, urgency=None):
         matching_requests = []
