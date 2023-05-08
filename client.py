@@ -180,15 +180,15 @@ class Client:
 
         return response
     
-    def call_watch(self):
+    def call_watch(self, item, loc):
         command = {
-            "command" : "open",
-            "args": []
+            "command" : "watch",
+            "args": [item, loc]
         }
         self.send_command(command)
-        print("Client send_command in call_close")
+        print("Client send_command in call_watch")
         response = self.receive_response()
-        print("Client recieved in call_close" , response)
+        print("Client recieved in call_watch" , response)
 
         return response
 

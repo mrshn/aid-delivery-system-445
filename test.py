@@ -4,7 +4,7 @@ import sys
 
 from client import Client
 
-client1 = Client("localhost", 1423)
+client1 = Client("localhost", 1424)
 
 client1.call_register("emre", 1234)
 client1.call_login("emre", 1234)
@@ -31,6 +31,11 @@ client1.call_add_request([("searchedItem",2)], (0.1, 0.1), 1 )
 client1.call_add_request([("searchedItem2",3)], (0.2, 0.8), 2 )
 client1.call_update_request(0,[("searchedItem2",2)], (0.9, 0.9), 1 )
 client1.handle_delete_request(0 )
+
+client1.call_watch("nameItem", (0.0, 0.0))
+client1.call_close()
+
+client1.call_watch("nameItem", (0.0, 0.0))
 
 
 sys.exit()

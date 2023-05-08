@@ -222,6 +222,8 @@ class Campaign:
 
         self._campaigns[self.id] = (self)
 
+        WatchQueue.addCampaign(self.id)
+
     @classmethod
     def getCampaigns(cls):
         return cls._campaigns
@@ -334,7 +336,7 @@ class WatchCallback:
         self.callback = callback
         self.item = item.lower() if item is not None else None
         self.loc = loc
-        self.urgency = Urgency(urgency)
+        self.urgency = Urgency.URGENT
         self.watch_queue = WatchQueue(campaign_id)
         self.startWatcherThread()
 
@@ -342,7 +344,7 @@ class WatchCallback:
         def watchingThread(callback, wq):
             wq.watch(callback)
 
-        t = threading.Thread(target=watchingThread, args=(self.callback, self.watchqueue))
+        t = threading.Thread(target=watchingThread, args=(self.callback, self.watch_queue))
         t.start()
     
     def matches_query(self, request):
@@ -356,7 +358,6 @@ class WatchCallback:
     
     def remove(self):
         self.watch_queue.handleClose()
-
     
     def notify(self, campaign_id, request):
         #messagequeue 
@@ -381,16 +382,20 @@ class WatchQueue:
             with cond:
                 cond.notify_all()
 
-    def watch(self, callback, campaign_id):
-        cond = WatchQueue._is_notified[campaign_id]
+    @staticmethod
+    def addCampaign(campaign_id):
+        WatchQueue._is_notified[campaign_id] = threading.Condition(threading.Lock())
+
+    def watch(self, callback):
+        cond = WatchQueue._is_notified[self.campaign_id]
         self.is_watching = True
         with cond:
             while True:
-                self.cond.wait()
+                cond.wait()
                 with cond:
                     if not self.is_watching:
                         break
-                    callback(WatchQueue._active_requests[campaign_id])
+                    callback(WatchQueue._active_requests[self.campaign_id])
 
     def handleClose(self):
         self.is_watching = False
