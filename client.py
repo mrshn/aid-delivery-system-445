@@ -13,15 +13,19 @@ class Client:
         self.authenticated = False
         self.token = None
         self.response_receiver = False
-        # start this after login & register
+        self.supply_id = None
+
+    # started after login 
+    # closed after logout 
     def start_response_receiver(self):
-        if self.response_receiver:
-            self.cond.wait()
+        self.response_receiver = True
         def response_handler() :
-            self.response_receiver = True
             while self.response_receiver:
                 response = self.receive_response()
                 print(f"RESPONSE EVENT : {response}")
+                if response is not None  and response["response"] =="Items marked available":
+                    self.supply_id = response["data"]
+            print("Client is logged out")
         thread = threading.Thread(target=response_handler, args=())
         thread.start()
 
@@ -32,35 +36,36 @@ class Client:
         command = {"command": "login",
                    "args": [username, password] }
         
-        self.send_command(command)
-        print("Client send_command in call_login")
-        response = self.receive_response()
-        print("Client recieved in call_login" , response)
-
-        if response["success"]:
-            self.token = response["data"]
-            self.authenticated = True
-            self.start_response_receiver()
-
-        return response
+        if self.send_command(command,islogin=True):
+            print("Client send_command in call_login")
+        if not self.response_receiver:
+            response = self.receive_response()
+            print("Client recieved in call_login" , response)
+            if response["success"]:
+                self.token = response["data"]
+                self.authenticated = True
+                self.start_response_receiver()
     
     def call_logout(self ):
-        self.stop_response_receiver
         command = {"command": "logout",
                     "args" : []
                    }
         
-        self.send_command(command)
-        print("Client send_command in call_logout")
+        self.stop_response_receiver()
+        if self.send_command(command):
+            print("Client send_command in call_logout")
+
     
     def call_register(self, username, password):
         command = {"command": "register", 
                     "args" : [username,password] }
         
-        self.send_command(command)
-        print("Client send_command in call_register")
-        response = self.receive_response()
-        print("Client recieved in call_register" , response)
+        if self.send_command(command,islogin=True):
+            print("Client send_command in call_register")
+
+        if not self.response_receiver:
+            response = self.receive_response()
+            print("Client recieved in call_register" , response)
 
         return response
     
@@ -70,8 +75,9 @@ class Client:
             "command" : "addrequest",
             "args": [items,geoloc,urgency]
         }
-        self.send_command(command)
-        print("Client send_command in call_add_request")
+        if self.send_command(command):
+            print("Client send_command in call_add_request")
+        
     
     def call_update_request(self, reqId,items: List[Tuple[str,int]], geoloc: Tuple[float,float],  urgency: str):
 
@@ -79,17 +85,19 @@ class Client:
             "command" : "updaterequest",
             "args": [reqId,items,geoloc,urgency]
         }
-        self.send_command(command)
-        print("Client send_command in call_update_request")
+        if self.send_command(command):
+            print("Client send_command in call_update_request")
+        
     
-    def handle_delete_request(self, request_id):
+    def call_delete_request(self, request_id):
 
         command = {
             "command" : "deleterequest",
             "args": [request_id]
         }
-        self.send_command(command)
-        print("Client send_command in handle_delete_request")
+        if self.send_command(command):
+            print("Client send_command in call_delete_request")
+        
 
     def call_list(self):
 
@@ -97,8 +105,10 @@ class Client:
             "command" : "list",
             "args" : []
         }
-        self.send_command(command)
-        print("Client send_command in call_list")
+        if self.send_command(command):
+            print("Client send_command in call_list")
+        
+
     
     def call_add_catalog_item(self,name,synonyms):
 
@@ -106,8 +116,9 @@ class Client:
             "command" : "addcatalogitem",
             "args" : [name,synonyms]
         }
-        self.send_command(command)
-        print("Client send_command in call_add_catalog_item")
+        if self.send_command(command):
+            print("Client send_command in call_add_catalog_item")
+        
 
     def call_update_catalog_item(self,old_name,name,synonyms):
 
@@ -115,8 +126,9 @@ class Client:
             "command" : "updatecatalogitem",
             "args" : [old_name,name,synonyms]
         }
-        self.send_command(command)
-        print("Client send_command in call_update_catalog_item")
+        if self.send_command(command):
+            print("Client send_command in call_update_catalog_item")
+        
     
     def call_search_catalog_item(self,name):
 
@@ -124,8 +136,9 @@ class Client:
             "command" : "searchcatalogitem",
             "args" : [name]
         }
-        self.send_command(command)
-        print("Client send_command in call_search_catalog_item")
+        if self.send_command(command):
+            print("Client send_command in call_search_catalog_item")
+
 
     def call_new_instance(self, name, description):
 
@@ -133,8 +146,9 @@ class Client:
             "command" : "new",
             "args": [name, description]
         }
-        self.send_command(command)
-        print("Client send_command in call_new_instance")
+        if self.send_command(command):
+            print("Client send_command in call_new_instance")
+
     
     def call_open(self, campaign_id):
 
@@ -142,38 +156,76 @@ class Client:
             "command" : "open",
             "args": [campaign_id]
         }
-        self.send_command(command)
-        print("Client send_command in call_open")
+        if self.send_command(command):
+            print("Client send_command in call_open")
+  
     
     def call_close(self):
         command = {
             "command" : "open",
             "args": []
         }
-        self.send_command(command)
-        print("Client send_command in call_close")
+        if self.send_command(command):
+            print("Client send_command in call_close")
+    
     
     def call_watch(self, item, loc):
         command = {
             "command" : "watch",
             "args": [item, loc]
         }
-        self.send_command(command)
-        print("Client send_command in call_watch")
+        if self.send_command(command):
+            print("Client send_command in call_watch")
+      
 
-    def call_mark_available(self, requestid, items, expire, geoloc, comments):
+    # TODO: test
+    def call_mark_available_request(self, requestid, items, expire, geoloc, comments):
         command = {
             "command" : "markavilable",
             "args": [requestid, items, expire, geoloc, comments]
         }
-        self.send_command(command)
-        print("Client send_command in call_mark_available")
+        if self.send_command(command):
+            print("Client send_command in call_mark_available_request")
+        
+    # TODO: implement
+    def call_get_supply_ids(self):
+        # For now no req for this
+        # But when call_mark_available_request returns there is a supply_id there usign that one
+        return self.supply_id
+    
+    # TODO: test
+    def call_pick_request(self, requestid, supply_id):
 
-    def send_command(self, json_command):
-        json_command["token"] = self.token 
 
-        message = json.dumps(json_command).encode()
-        self.socket.sendall(message)
+        command = {
+            "command" : "pick",
+            "args": [requestid,supply_id]
+        }
+        if self.send_command(command):
+            print("Client send_command in call_pick_request")
+        
+    
+    # TODO: test
+    def call_arrived_request(self, requestid, supply_id):
+        command = {
+            "command" : "arrived",
+            "args": [requestid,supply_id]
+        }
+        if self.send_command(command):
+            print("Client send_command in call_arrived_request")
+        
+
+    def send_command(self, json_command,islogin=False):
+
+        if self.authenticated or islogin :
+            json_command["token"] = self.token 
+
+            message = json.dumps(json_command).encode()
+            self.socket.sendall(message)
+            return True
+        else:
+            print("From Client:  Please login first")
+            return False
 
     def receive_response(self):
         data = b""
