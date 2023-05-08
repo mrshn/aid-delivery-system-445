@@ -148,10 +148,10 @@ class Agent(threading.Thread):
             return self.send_message("Authentication required.",success=False)
         if self.instance:
             instanceid = self.instance.id
-            self.instance = None
             for watch_id in self._watches:
                 self.instance.unwatch(watch_id)
             self._watches = []
+            self.instance = None
             return self.send_message(f"Instance with id {instanceid} closed.")
 
     def handle_add_request(self, items: List[Tuple[str,int]], geoloc: Tuple[float,float],  urgency: str):
