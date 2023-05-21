@@ -33,7 +33,6 @@ class Agent(threading.Thread):
             "markavilable": self.handle_mark_available,
             "pick": self.handle_pick,
             "arrived": self.handle_arrived,
-
         }
 
         self._watches = []
