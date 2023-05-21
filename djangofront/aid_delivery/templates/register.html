@@ -1,7 +1,7 @@
 <html>
 <body>
 {{ message }}
-<form method="post" action="/loginp">
+<form method="post" action="/regsiterp">
 Username:
 <input type="text" name="username"/>
 <br/>
@@ -9,8 +9,8 @@ Password:
 <input type="password" name="password"/>
 <br/>
 {% csrf_token %}
-<input type="submit" name="login" value="login"/>
+<input type="submit" name="register" value="register"/>
 </form>
-<p><a href="/register">Don have an account? Click to register. </a></p>
+<p><a href="/login">Already have an account? Click to login. </a></p>
 </body>
 </html>

@@ -15,12 +15,14 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path, re_path
-import aid_delivery 
+from aid_delivery import views as adviews
 
 urlpatterns = [
-    re_path(r'^$', aid_delivery.views.index, name='index'),
-    re_path(r'^logout$', aid_delivery.views.logout_view, name='Logout'),
-    re_path(r'^loginp$', aid_delivery.views.login_post, name='Login'),
-    re_path(r'^login$', aid_delivery.views.login_view, name='Login'),
+    re_path(r'^$', adviews.index, name='index'),
+    re_path(r'^logout$', adviews.logout_view, name='Logout'),
+    re_path(r'^loginp$', adviews.login_post, name='Login'),
+    re_path(r'^login$', adviews.login_view, name='Login'),
+    re_path(r'^registerp$', adviews.register_post, name='Register'),
+    re_path(r'^register$', adviews.register_view, name='Register'),
     path('admin/', admin.site.urls),
 ]

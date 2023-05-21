@@ -4,7 +4,7 @@ from django.shortcuts import redirect, render
 
 def index(request):
     if not request.session.get('is_authenticated'):
-        return redirect('login')
+        return redirect('/login')
     context = {}
     return render(request, 'home.html', context)
 	
@@ -38,3 +38,24 @@ def logout_view(request):
 	'''Simply logout'''
 	# logout here from backend
 	return redirect("/").set_cookie("auth_token", "")
+
+# Function: login_view
+#  Show login form
+def register_view(request):
+	'''Show register form'''
+	context =  {'message':'Registration to aid delivery 445 system.'}
+	return render(request, 'register.html', context)
+
+# Function: login_post
+#  Login to system
+def register_post(request):
+    '''Login to system'''
+    username = request.POST['username']
+    password = request.POST['password']
+    # check for authentication from backend
+    user = authenticate(username=username, password=password)
+    if user["success"]:
+        # create login session 
+        return redirect("/login")
+    else:
+        return render(request, 'register.html', {'message': 'Invalid credentials'})
