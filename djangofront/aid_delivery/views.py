@@ -36,7 +36,6 @@ def login_post(request):
     password = request.POST['password']
     # check for authentication from backend
     login = c.call_login(username, password)
-    print("anan 501 : login : ", login)
     if login["success"]:
         # create login session 
         request.session['is_authenticated'] = True
@@ -54,7 +53,6 @@ def logout_get(request):
     '''Simply logout'''
     # logout here from backend
     logout = c.call_logout(request.COOKIES.get('username'), request.COOKIES.get('auth_token'))
-    print("anan650 : logout : ", logout)
     if logout["success"]:
         request.session['is_authenticated'] = False
         response = redirect("/")
@@ -99,9 +97,9 @@ def add_request(request):
                                 request.COOKIES.get('auth_token'), 
                                 items, geoloc, urgency)
 
-    request.session['response_message'] = result
-
-    print("result : ", result)
+    if result.get("data", None):
+        result["data"] = json.loads(result["data"])
+    request.session['response_message'] = json.dumps(result)
         
     return redirect("/")
 
@@ -120,9 +118,9 @@ def update_request(request):
                                 request.COOKIES.get('auth_token'), 
                                 id, items, geoloc, urgency)
 
-    request.session['response_message'] = result
-
-    print("result : ", result)
+    if result.get("data", None):
+        result["data"] = json.loads(result["data"])
+    request.session['response_message'] = json.dumps(result)
         
     return redirect("/")
 
@@ -130,13 +128,13 @@ def delete_request(request):
     '''add_request Request'''
     id = int(request.POST["id"])
 
-    result = c.call_update_request(request.COOKIES.get('username'), 
+    result = c.call_delete_request(request.COOKIES.get('username'), 
                                 request.COOKIES.get('auth_token'), 
                                 id)
 
-    request.session['response_message'] = result
-
-    print("result : ", result)
+    if result.get("data", None):
+        result["data"] = json.loads(result["data"])
+    request.session['response_message'] = json.dumps(result)
         
     return redirect("/")
 
@@ -155,39 +153,38 @@ def mark_available_request(request):
                                 request.COOKIES.get('auth_token'), 
                                 id, items, expire, geoloc, comments)
 
-    request.session['response_message'] = result
-
-    print("result : ", result)
+    if result.get("data", None):
+        result["data"] = json.loads(result["data"])
+    request.session['response_message'] = json.dumps(result)
         
     return redirect("/")
 
 def pick_request(request):
     '''add_request Request'''
     id = int(request.POST["id"])
-    supplyid = int(request.POST["supplyid"])
+    supplyid = request.POST["supplyid"]
 
     result = c.call_pick_request(request.COOKIES.get('username'), 
                                 request.COOKIES.get('auth_token'), 
                                 id, supplyid)
 
-    request.session['response_message'] = result
-
-    print("result : ", result)
+    if result.get("data", None):
+        result["data"] = json.loads(result["data"])
+    request.session['response_message'] = json.dumps(result)
         
     return redirect("/")
 
 def arrived_request(request):
     '''add_request Request'''
     id = int(request.POST["id"])
-    supplyid = int(request.POST["supplyid"])
+    supplyid = request.POST["supplyid"]
 
     result = c.call_arrived_request(request.COOKIES.get('username'), 
                                 request.COOKIES.get('auth_token'), 
                                 id, supplyid)
-
-    request.session['response_message'] = result
-
-    print("result : ", result)
+    if result.get("data", None):
+        result["data"] = json.loads(result["data"])
+    request.session['response_message'] = json.dumps(result)
         
     return redirect("/")
 
@@ -200,12 +197,12 @@ def new_campaign(request):
                                 request.COOKIES.get('auth_token'), 
                                 name, description)
     
-    result["data"] = json.loads(result.get("data", ""))
+    if result.get("data", None):
+        result["data"] = json.loads(result["data"])
 
     response = redirect("/")
 
-    if result["success"]:
-        request.session['response_message'] = json.dumps(result, indent=4)
+    request.session['response_message'] = json.dumps(result, indent=4)
         #response.set_cookie("campaign", int(result["data"]["id"]))
 
     return response
@@ -223,8 +220,9 @@ def open_campaign(request):
 
     response = redirect("/")
     if result["success"]:
-        request.session['response_message'] = json.dumps(result, indent=4)
         response.set_cookie("campaign_id", id)
+    
+    request.session['response_message'] = json.dumps(result, indent=4)
 
     return response
 
@@ -237,9 +235,8 @@ def list_campaign(request):
         result["data"] = json.loads(result["data"])
 
     response = redirect("/")
-    if result["success"]:
-        request.session['response_message'] = json.dumps(result, indent=4)
-        response.set_cookie("campaign_id", id)
+
+    request.session['response_message'] = json.dumps(result, indent=4)
     return response
 
 def close_campaign(request):
@@ -252,8 +249,9 @@ def close_campaign(request):
 
     response = redirect("/")
     if result["success"]:
-        request.session['response_message'] = json.dumps(result, indent=4)
-        response.set_cookie("campaign_id", id)
+        response.delete_cookie("campaign_id")
+
+    request.session['response_message'] = json.dumps(result, indent=4)
 
     return response
 
@@ -268,14 +266,11 @@ def add_catalog_item(request):
                                 request.COOKIES.get('auth_token'),
                                 name, synonyms)
     
-    print("anan33 : ", result.get("data", None))
     if result.get("data", None):
         result["data"] = json.loads(result["data"])
 
     response = redirect("/")
-    if result["success"]:
-        request.session['response_message'] = json.dumps(result, indent=4)
-        response.set_cookie("campaign_id", id)
+    request.session['response_message'] = json.dumps(result, indent=4)
 
     return response
 
@@ -296,9 +291,7 @@ def update_catalog_item(request):
         result["data"] = json.loads(result["data"])
 
     response = redirect("/")
-    if result["success"]:
-        request.session['response_message'] = json.dumps(result, indent=4)
-        response.set_cookie("campaign_id", id)
+    request.session['response_message'] = json.dumps(result, indent=4)
 
     return response
 
@@ -315,8 +308,6 @@ def search_catalog_item(request):
         result["data"] = json.loads(result["data"])
 
     response = redirect("/")
-    if result["success"]:
-        request.session['response_message'] = json.dumps(result, indent=4)
-        response.set_cookie("campaign_id", id)
+    request.session['response_message'] = json.dumps(result, indent=4)
 
     return response

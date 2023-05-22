@@ -129,7 +129,7 @@ class Agent(threading.Thread):
         if not self.authenticated:
             return self.send_message("Authentication required.",success=False)
         if self.instance:
-            self.handle_close_instance()
+            self.handle_close_instance(log=False)
 
         instance = CampaignsManager.getCampaign(instance_id)
         if not instance:
@@ -151,7 +151,7 @@ class Agent(threading.Thread):
             self._watches.append(watch_id)
             self.send_message(f"New watcher registered with id : {watch_id}")
 
-    def handle_close_instance(self):
+    def handle_close_instance(self, log=True):
         if not self.authenticated:
             return self.send_message("Authentication required.",success=False)
         if self.instance:
@@ -161,16 +161,22 @@ class Agent(threading.Thread):
             self._watches = []
             self.instance = None
             UserManager.search_user(self.username).open_campaign = None
-            return self.send_message(f"Instance with id {instanceid} closed.")
+            if (log):
+                return self.send_message(f"Instance with id {instanceid} closed.")
 
     def handle_add_request(self, items: List[Tuple[str,int]], geoloc: Tuple[float,float],  urgency: str):
         def supplyNotificationCallback(message):
             self.send_message(f"NOTIFICATION : Request {r.id} supply update : ", message)
         if not self.instance:
-            self.send_message(f"First open an instance.", success=False)
+            return self.send_message(f"First open an instance.", success=False)
         r = Request( items, geoloc, urgency, supplyNotificationCB=None) # supplyNotificationCB is set to none to prevent notifications
         self.instance.addrequest(r)
-        return self.send_message(f"New request with id {r.id} added to campaign with id {self.instance.id}. \n Request info : \n {r.get()}")
+        return self.send_message(f"New request with id {r.id} added to campaign with id {self.instance.id}", data=json.dumps({
+            "id" : r.id, 
+            "items" : r.items, 
+            "geoloc" : r.geoloc,
+            "status" : r.status
+        }))
 
     def handle_update_request(self, request_id, *args, **kwargs):
         if not self.instance:

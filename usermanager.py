@@ -25,8 +25,6 @@ def validate(fields:list[str]):
             argspec = getfullargspec(func)
             argument_index = argspec.args.index("values")
             values = args[argument_index]
-            print("anan58 : ", values)
-            print("anan59 : ", fields)
             for k in values:
                 if k not in fields:
                     raise Exception("Unwriteable field write is attempted")

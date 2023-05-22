@@ -161,6 +161,7 @@ class Client:
             print(self.name, ": Client send_command in call_open")
 
         response = self.receive_response()
+        print(self.name, ": Client received response in call_open : ", response)
         return response
   
     

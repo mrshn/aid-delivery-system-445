@@ -90,6 +90,8 @@
         Supply Id : 
         <input type="text" name="supplyid" placeholder="Supply id..." size="30"/>
         <br/>
+        {% csrf_token %}
+        <input type="submit" name="send" value="send"/>
     </form>
 {% elif form == "mark_available_request" %}
     <form method="post" action="/mark_available_request">
@@ -119,6 +121,8 @@
         Supply Id : 
         <input type="text" name="supplyid" placeholder="Supply id..." size="30"/>
         <br/>
+        {% csrf_token %}
+        <input type="submit" name="send" value="send"/>
     </form>
 {% elif form == "add_catalog_item" %}
     <form method="post" action="/add_catalog_item">
@@ -174,6 +178,7 @@
     </form>
 {% elif form == "close" %}
     <form method="post" action="/close_instance">
+        {% csrf_token %}
         <input type="submit" name="send" value="send"/>
     </form>
 {% endif %}
