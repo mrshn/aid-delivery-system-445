@@ -25,6 +25,8 @@ def validate(fields:list[str]):
             argspec = getfullargspec(func)
             argument_index = argspec.args.index("values")
             values = args[argument_index]
+            print("anan58 : ", values)
+            print("anan59 : ", fields)
             for k in values:
                 if k not in fields:
                     raise Exception("Unwriteable field write is attempted")
@@ -61,6 +63,7 @@ class User:
         self.passwd = hashlib.sha256(f"{passwd}".encode())
         self.logged_in = False
         self.session_token = None
+        self.open_campaign = None
         self.id = User.__global_id_counter
         User.__global_id_counter += 1
 

@@ -1,6 +1,33 @@
 <html>
+<head> 
+    <style>
+        a:hover{
+            border:1px solid red;  
+        }
+        .column {
+            float: left;
+            width: 25%;
+            padding: 10px;
+            height: 200px; /* Should be removed. Only for demonstration */
+        }
+        .row:after {
+            content: "";
+            display: table;
+            clear: both;
+        }
+    </style>
+</head>
 <body>
-<h1>Movie Party Application</h1>
+    <div class="row" height: 50px>
+
+        <form width="40px" method="get" action="/logout">
+            {% csrf_token %}
+            <input type="submit" name="logout" value="logout"/>
+        </form>
+        <h1>Aid Delivery System</h1>
+    </div>
+    <br/>
+
 {% block content %}{% endblock %}
 </body>
 </html>

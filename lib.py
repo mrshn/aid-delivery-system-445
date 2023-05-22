@@ -44,6 +44,7 @@ class Item:
     @validate(fields=__writeable_fields)
     def update(self, values: dict[str,any]):
         for k,v in values.items():
+            print("anan60 : ", k, v)
             if k in self.__writeable_fields:
                 setattr(self, k, v)
         # update in db

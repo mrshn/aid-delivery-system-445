@@ -18,8 +18,21 @@ from django.urls import path, re_path
 from aid_delivery import views as adviews
 
 urlpatterns = [
-    re_path(r'^$', adviews.index, name='index'),
-    re_path(r'^logout$', adviews.logout_view, name='Logout'),
+    re_path(r'^$', adviews.index, name='Home'),
+    re_path(r'^add_request$', adviews.add_request, name='Request'),
+    re_path(r'^update_request$', adviews.update_request, name='Request'),
+    re_path(r'^delete_request$', adviews.delete_request, name='Request'),
+    re_path(r'^mark_available_request$', adviews.mark_available_request, name='Request'),
+    re_path(r'^pick_request$', adviews.pick_request, name='Request'),
+    re_path(r'^arrived_request$', adviews.arrived_request, name='Request'),
+    re_path(r'^new_instance$', adviews.new_campaign, name='Campaign'),
+    re_path(r'^open_instance$', adviews.open_campaign, name='Campaign'),
+    re_path(r'^list_instances$', adviews.list_campaign, name='Campaign'),
+    re_path(r'^close_instance$', adviews.close_campaign, name='Campaign'),
+    re_path(r'^add_catalog_item$', adviews.add_catalog_item, name='Catalog'),
+    re_path(r'^update_catalog_item$', adviews.update_catalog_item, name='Catalog'),
+    re_path(r'^search_catalog_item$', adviews.search_catalog_item, name='Catalog'),
+    re_path(r'^logout$', adviews.logout_get, name='Logout'),
     re_path(r'^loginp$', adviews.login_post, name='Login'),
     re_path(r'^login$', adviews.login_view, name='Login'),
     re_path(r'^registerp$', adviews.register_post, name='Register'),
