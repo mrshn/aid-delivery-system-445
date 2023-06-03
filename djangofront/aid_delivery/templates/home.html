@@ -1,0 +1,194 @@
+{% extends "base.html" %}
+{% block content %}
+
+<p> Hello, choose action below ! </p>
+
+<!-- form choice below -->
+<div class="row">
+    <div class="column">
+        <h3> Catalog : </h3>
+        <a href="/?form=add_catalog_item"> Add Catalog Item </a> <br/>
+        <a href="/?form=update_catalog_item"> Update Catalog Item </a> <br/>
+        <a href="/?form=search_catalog_item"> Search Catalog Item </a> <br/>
+    </div>
+    <div class="column">
+        <h3> Campaign : </h3>
+        <a href="/?form=list"> List Campaigns </a> <br/>
+        <a href="/?form=new_instance"> New Campaign </a> <br/>
+        <a href="/?form=open"> Open Campaign </a> <br/>
+        <a href="/?form=close"> Close Campaign </a> <br/>
+    </div>
+    <div class="column">
+        <h3> Request : </h3>
+        <a href="/?form=add_request"> Add Request </a> <br/>
+        <a href="/?form=update_request"> Update Request </a> <br/>
+        <a href="/?form=delete_request"> Delete Request </a> <br/>
+        <a href="/?form=mark_available_request"> Mark Request Available </a> <br/>
+        <a href="/?form=pick_request"> Pick Request </a> <br/>
+        <a href="/?form=arrived_request"> Request Arrived </a> <br/>
+    </div>
+</div>
+<!-- forms below -->
+<datalist id="urgency">
+    <option value="Urgent">
+    <option value="Soon">
+    <option value="Days">
+    <option value="Weeks">
+    <option value="Optional">
+</datalist>
+
+<br/>
+{% if form == "add_request" %}
+    <form method="post" action="/add_request">
+        Items :
+        <input type="text" name="items" placeholder="itemname1: 6, itemname2: 1.." size="30"/>
+        <br/>
+        Geoloc:
+        <input type="text" name="geoloc" placeholder="0.11, 1.5" size="30"/>
+        <br/>
+        Urgency:
+        <input list="urgency" name="urgency" size="30"/>
+        <br/>
+        {% csrf_token %}
+        <input type="submit" name="send" value="send"/>
+    </form>
+{% elif form == "update_request" %}
+    <form method="post" action="/update_request">
+        Request Id : 
+        <input type="text" name="id" placeholder="Request id..." size="30"/>
+        <br/>
+        Items :
+        <input type="text" name="items" placeholder="itemname1: 6, itemname2: 1.." size="30"/>
+        <br/>
+        Geoloc:
+        <input type="text" name="geoloc" placeholder="0.11, 1.5" size="30"/>
+        <br/>
+        Urgency:
+        <input list="urgency" name="urgency" size="30"/>
+        <br/>
+        {% csrf_token %}
+        <input type="submit" name="send" value="send"/>
+    </form>
+{% elif form == "delete_request" %}
+    <form method="post" action="/delete_request">
+        Request Id : 
+        <input type="text" name="id" placeholder="Request id..." size="30"/>
+        <br/>
+        {% csrf_token %}
+        <input type="submit" name="send" value="send"/>
+    </form>
+{% elif form == "list" %}
+    <form method="post" action="/list_instances">
+        {% csrf_token %}
+        <input type="submit" name="send" value="send"/>
+    </form>
+{% elif form == "pick_request" %}
+    <form method="post" action="/pick_request">
+        Request Id : 
+        <input type="text" name="id" placeholder="Request id..." size="30"/>
+        <br/>
+        Supply Id : 
+        <input type="text" name="supplyid" placeholder="Supply id..." size="30"/>
+        <br/>
+        {% csrf_token %}
+        <input type="submit" name="send" value="send"/>
+    </form>
+{% elif form == "mark_available_request" %}
+    <form method="post" action="/mark_available_request">
+        Request Id : 
+        <input type="text" name="id" placeholder="Request id..." size="30"/>
+        <br/>
+        Items :
+        <input type="text" name="items" placeholder="itemname1: 6, itemname2: 1.." size="30"/>
+        <br/>
+        Expire Time (Hours) :
+        <input type="number" name="expire" placeholder="1" size="30"/>
+        <br/>
+        Geoloc :
+        <input type="text" name="geoloc" placeholder="0.11, 1.5" size="30"/>
+        <br/>
+        Comments :
+        <input type="text" name="comments" placeholder="" size="30"/>
+        <br/>
+        {% csrf_token %}
+        <input type="submit" name="send" value="send"/>
+    </form>
+{% elif form == "arrived_request" %}
+    <form method="post" action="/arrived_request">
+        Request Id : 
+        <input type="text" name="id" placeholder="Request id..." size="30"/>
+        <br/>
+        Supply Id : 
+        <input type="text" name="supplyid" placeholder="Supply id..." size="30"/>
+        <br/>
+        {% csrf_token %}
+        <input type="submit" name="send" value="send"/>
+    </form>
+{% elif form == "add_catalog_item" %}
+    <form method="post" action="/add_catalog_item">
+        Name :
+        <input type="text" name="name" placeholder="catalog item name" size="30"/>
+        <br/>
+        Synonyms :
+        <input type="text" name="synonyms" placeholder="synonym1, synonym2..." size="30"/>
+        <br/>
+        {% csrf_token %}
+        <input type="submit" name="send" value="send"/>
+    </form>
+{% elif form == "update_catalog_item" %}
+    <form method="post" action="/update_catalog_item">
+        Name :
+        <input type="text" name="name" placeholder="catalog item name" size="30"/>
+        <br/>
+        New Name :
+        <input type="text" name="newname" placeholder="new name" size="30"/>
+        <br/>
+        Synonyms :
+        <input type="text" name="synonyms" placeholder="synonym1, synonym2..." size="30"/>
+        <br/>
+        {% csrf_token %}
+        <input type="submit" name="send" value="send"/>
+    </form>
+{% elif form == "search_catalog_item" %}
+    <form method="post" action="/search_catalog_item">
+        Name :
+        <input type="text" name="name" placeholder="catalog item name" size="30"/>
+        <br/>
+        {% csrf_token %}
+        <input type="submit" name="send" value="send"/>
+    </form>
+{% elif form == "new_instance" %}
+    <form method="post" action="/new_instance">
+        Name :
+        <input type="text" name="name" placeholder="Campaign name..." size="30"/>
+        <br/>
+        Description :
+        <input type="text" name="description" placeholder="Campaign description..." size="30"/>
+        <br/>
+        {% csrf_token %}
+        <input type="submit" name="send" value="send"/>
+    </form>
+{% elif form == "open" %}
+    <form method="post" action="/open_instance">
+        Campaign Id :
+        <input type="text" name="id" placeholder="Campaign id..." size="30"/>
+        <br/>
+        {% csrf_token %}
+        <input type="submit" name="send" value="send"/>
+    </form>
+{% elif form == "close" %}
+    <form method="post" action="/close_instance">
+        {% csrf_token %}
+        <input type="submit" name="send" value="send"/>
+    </form>
+{% endif %}
+
+<!-- response message below -->
+{% if response_message %}
+<h3> Response : </h3>
+<div style="white-space: pre-wrap;">
+    <p> {{ response_message }} </p>
+</div>
+{% endif %}
+
+{% endblock %}

@@ -61,6 +61,7 @@ class User:
         self.passwd = hashlib.sha256(f"{passwd}".encode())
         self.logged_in = False
         self.session_token = None
+        self.open_campaign = None
         self.id = User.__global_id_counter
         User.__global_id_counter += 1
 

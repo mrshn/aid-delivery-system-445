@@ -1,0 +1,16 @@
+<html>
+<body>
+{{ message }}
+<form method="post" action="/registerp">
+Username:
+<input type="text" name="username"/>
+<br/>
+Password:
+<input type="password" name="password"/>
+<br/>
+{% csrf_token %}
+<input type="submit" name="register" value="register"/>
+</form>
+<p><a href="/login">Already have an account? Click to login. </a></p>
+</body>
+</html>

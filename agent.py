@@ -33,7 +33,6 @@ class Agent(threading.Thread):
             "markavilable": self.handle_mark_available,
             "pick": self.handle_pick,
             "arrived": self.handle_arrived,
-
         }
 
         self._watches = []
@@ -49,6 +48,7 @@ class Agent(threading.Thread):
                 cmd = data["command"]
                 args = data["args"]
                 token = data["token"]
+                self.username = data["username"]
                 
                 print(f"Agent recieved {cmd} and {args}")
 
@@ -58,6 +58,9 @@ class Agent(threading.Thread):
                     else:
                         self.authenticated = UserManager.validate_token(self.username,token)
                         if self.authenticated :
+                            # if user has opened campaign, retrieve it
+                            if UserManager.search_user(self.username):
+                                self.instance = CampaignsManager.getCampaign(UserManager.search_user(self.username).open_campaign)
                             self.requests[cmd](*args)
                         else:
                             self.send_message("Please authenticate first",success=False)
@@ -101,7 +104,7 @@ class Agent(threading.Thread):
             return self.send_message("Authentication was not successful.",success=False)
 
     def handle_logout(self):
-        if self.authenticated and UserManager.logout(self.username):
+        if self.authenticated and UserManager.logout(self.username): 
             self.username = None
             self.authenticated = False
             return self.send_message("Logout successful.")
@@ -110,30 +113,30 @@ class Agent(threading.Thread):
 
     def handle_new_instance(self, *args):
         # *args are  [name, description]
-        self.instance = None 
         instance_name = args[0] if len(args) > 0 else None
         instance_description = args[1] if len(args) > 1 else None
         if not instance_name  or not instance_description:
             return self.send_message("instance_name or instance_description can not be empty.",success=False)
         instance = CampaignsManager.addCampaign(instance_name,instance_description)
-        return self.send_message("New instance created ", data= f"id={instance.id}, name={instance_name}, description={instance_description}")
+        return self.send_message("New instance created ", data=json.dumps({"id" : instance.id, "name":instance_name, "description":instance_description}))
 
 
     def handle_list_instances(self):
-        data = "\n".join([f"{i.id}: {i.name or ''}" for i in CampaignsManager.listCampaigns()])
-        return self.send_message("Here is the list of instances",data=data)
+        data = dict([(i.id, (i.name or '')) for i in CampaignsManager.listCampaigns()])
+        return self.send_message("Here is the list of instances",data=json.dumps(data))
 
     def handle_open_instance(self, instance_id):
         if not self.authenticated:
             return self.send_message("Authentication required.",success=False)
         if self.instance:
-            self.handle_close_instance()
+            self.handle_close_instance(log=False)
 
         instance = CampaignsManager.getCampaign(instance_id)
         if not instance:
             return self.send_message(f"Instance with id '{instance_id}' not found.",success=False)
         else:
             self.instance = instance
+            UserManager.search_user(self.username).open_campaign = instance_id
             return self.send_message(f"Instance with id '{instance_id}' opened.")
     
     def handle_watch(self, item, loc):
@@ -148,7 +151,7 @@ class Agent(threading.Thread):
             self._watches.append(watch_id)
             self.send_message(f"New watcher registered with id : {watch_id}")
 
-    def handle_close_instance(self):
+    def handle_close_instance(self, log=True):
         if not self.authenticated:
             return self.send_message("Authentication required.",success=False)
         if self.instance:
@@ -157,60 +160,79 @@ class Agent(threading.Thread):
                 self.instance.unwatch(watch_id)
             self._watches = []
             self.instance = None
-            return self.send_message(f"Instance with id {instanceid} closed.")
+            UserManager.search_user(self.username).open_campaign = None
+            if (log):
+                return self.send_message(f"Instance with id {instanceid} closed.")
 
     def handle_add_request(self, items: List[Tuple[str,int]], geoloc: Tuple[float,float],  urgency: str):
         def supplyNotificationCallback(message):
             self.send_message(f"NOTIFICATION : Request {r.id} supply update : ", message)
-        r = Request( items, geoloc, urgency, supplyNotificationCB=supplyNotificationCallback)
+        if not self.instance:
+            return self.send_message(f"First open an instance.", success=False)
+        r = Request( items, geoloc, urgency, supplyNotificationCB=None) # supplyNotificationCB is set to none to prevent notifications
         self.instance.addrequest(r)
-        return self.send_message(f"New request with id {r.id} added to campaign with id {self.instance.id}. \n Request info : \n {r.get()}")
+        return self.send_message(f"New request with id {r.id} added to campaign with id {self.instance.id}", data=json.dumps({
+            "id" : r.id, 
+            "items" : r.items, 
+            "geoloc" : r.geoloc,
+            "status" : r.status
+        }))
 
     def handle_update_request(self, request_id, *args, **kwargs):
+        if not self.instance:
+            self.send_message(f"First open an instance.", success=False)
         if (self.instance.updaterequest(request_id, *args, **kwargs)):
             return self.send_message(f"Request with id {request_id} is updated. \n Request info : \n {self.instance.getrequest(request_id).get()}")
         else :
             self.send_message(f"Request with id {request_id} update rejected. Request has active delivery.")
 
     def handle_delete_request(self, request_id):
+        if not self.instance:
+            self.send_message(f"First open an instance.", success=False)
         if (self.instance.removerequest(request_id)):
             return self.send_message(f"Request with id {request_id} is deleted")
         else :
             return self.send_message(f"Request with id {request_id} delete rejected. Request has active delivery.")
 
     def handle_add_catalog_item(self, name, synonyms):
-        Item(name, synonyms)
-        self.send_message(f"Catalog item '{name}' is created")
+        item = Item(name, synonyms)
+        self.send_message(f"Catalog item '{name}' is created", data=json.dumps({"id" : item.id, "name" : item.name, "synonyms": item.synonyms}))
     
     def handle_update_catalog_item(self, old_name, new_name, synonyms):
         
         item = Item.search(old_name)
         if item:
-            # item.update(new_name, synonyms)
-            return self.send_message(f"Catalog item is updated")
+            item.update({"name" : new_name, "synonyms": synonyms})
+            return self.send_message(f"Catalog item is updated", data=json.dumps({"id" : item.id, "name" : item.name, "synonyms": item.synonyms}))
         return self.send_message(f"Catalog item is not updated", success=False)
 
     def handle_search_catalog_item(self, name):
 
         item = Item.search(name)
         if item:
-            return self.send_message(f"Item id : {item.id} \n Item name : {item.name} \n Item synonyms : {item.synonyms}")
+            return self.send_message(f"Item found !", data=json.dumps({"id" : item.id, "name" : item.name, "synonyms": item.synonyms}))
         self.send_message("Item not found", success=False)
 
     def handle_mark_available(self, requestid: int, items: List[Tuple[str,int]], expire: int, geoloc: Tuple[float,float], comments: str):
+        if not self.instance:
+            self.send_message(f"First open an instance.", success=False)
         supply_id =  self.instance.findrequest(requestid).markavailable(UserManager.search_user(username=self.username),
                                                            items, expire, geoloc, comments)
-        self.send_message("Items marked available",data=supply_id)
+        self.send_message("Items marked available",data=json.dumps({"supply_id": supply_id}))
     
     def handle_pick(self, requestid, supply_id):
+        if not self.instance:
+            self.send_message(f"First open an instance.", success=False)
         self.instance.findrequest(requestid).pick(supply_id)
         self.send_message("Items picked")
 
     def handle_arrived(self, requestid, supply_id):
+        if not self.instance:
+            self.send_message(f"First open an instance.", success=False)
         self.instance.findrequest(requestid).arrived(supply_id)
         self.send_message("Items arrived")
 
-    def send_message(self, message, data = "No data", success = True):
+    def send_message(self, message, data = None, success = True):
         response = {"response": message,
                     "data": data,
                     "success": success}

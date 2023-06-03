@@ -97,9 +97,9 @@ class Request:
     def _init_items(self, items):
         self.items = {}
         for item_name, count in items:
-            item = Item.search(item_name)
-            if not item:
-                item = Item(item, [item]) # create a new item with the same name and synonym
+            item_exists = Item.search(item_name)
+            if not item_exists:
+                item = Item(item_name, [item_name]) # create a new item with the same name and synonym
             self.items[item.name] = (count)
 
 
@@ -189,14 +189,15 @@ class Request:
                 
     def arrived(self, supply_id: int) -> None:
         """Marks the selected supplies as arrived"""
-        supplier = list(self._selected_supplies.keys())[supply_id]
+        supplier = self._available_suppliers[supply_id][0]
         delivered_items = self._selected_supplies[supplier]
         for item, count in delivered_items.items():
             self.items[item] = self.items[item] - count
-            if self.items[item] == 0:
+            if self.items[item] <= 0:
                 del self.items[item]
         del self._selected_supplies[supplier]
         del self._delivery_info[supplier]
+        del self._available_suppliers[supply_id]
         if not self.items and not self._selected_supplies:
             self.status = "CLOSED"
 
